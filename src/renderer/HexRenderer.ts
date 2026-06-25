@@ -161,22 +161,16 @@ function drawHexTile(
   ctx.fillStyle = tile.revealed ? color : COLORS.fog;
   ctx.fill();
 
-  if (tile.revealed) {
-    ctx.strokeStyle = tile.claimedByPlayer ? COLORS.hexBorderClaimed : COLORS.hexBorder;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
   // Fog gradient for adjacent-to-claimed hexes
   if (!tile.claimedByPlayer && fogDir) {
-    const size = 40 * zoom;
-    const len = Math.sqrt(fogDir.dx * fogDir.dx + fogDir.dy * fogDir.dy);
-    if (len > 0) {
-      const nx = fogDir.dx / len;
-      const ny = fogDir.dy / len;
+    const fogSize = 40 * zoom;
+    const fogLen = Math.sqrt(fogDir.dx * fogDir.dx + fogDir.dy * fogDir.dy);
+    if (fogLen > 0) {
+      const nx = fogDir.dx / fogLen;
+      const ny = fogDir.dy / fogLen;
       const grad = ctx.createLinearGradient(
-        px - nx * size, py - ny * size,
-        px + nx * size, py + ny * size,
+        px - nx * fogSize, py - ny * fogSize,
+        px + nx * fogSize, py + ny * fogSize,
       );
       grad.addColorStop(0, 'rgba(10,10,20,1.0)');
       grad.addColorStop(0.3, 'rgba(10,10,20,1.0)');
@@ -187,13 +181,39 @@ function drawHexTile(
       grad.addColorStop(1, 'rgba(10,10,20,0)');
       ctx.fillStyle = grad;
       ctx.fill();
+      ctx.strokeStyle = 'rgba(10,10,20,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
     }
   }
 
-  // Highlight selected
+  // Highlight selected (after fog — stroke fades with fog gradient on non-claimed tiles)
   if (state.selectedHex && state.selectedHex.q === tile.q && state.selectedHex.r === tile.r) {
-    ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 2.5;
+    if (!tile.claimedByPlayer && fogDir) {
+      const fogSize = 40 * zoom;
+      const fogLen = Math.sqrt(fogDir.dx * fogDir.dx + fogDir.dy * fogDir.dy);
+      if (fogLen > 0) {
+        const nx = fogDir.dx / fogLen;
+        const ny = fogDir.dy / fogLen;
+        const grad = ctx.createLinearGradient(
+          px - nx * fogSize, py - ny * fogSize,
+          px + nx * fogSize, py + ny * fogSize,
+        );
+        grad.addColorStop(0, 'rgba(255,215,0,0)');
+        grad.addColorStop(0.3, 'rgba(255,215,0,0)');
+        grad.addColorStop(0.4, 'rgba(255,215,0,0.1)');
+        grad.addColorStop(0.5, 'rgba(255,215,0,0.3)');
+        grad.addColorStop(0.6, 'rgba(255,215,0,0.8)');
+        grad.addColorStop(0.7, 'rgba(255,215,0,1)');
+        grad.addColorStop(1, 'rgba(255,215,0,1)');
+        ctx.strokeStyle = grad;
+      } else {
+        ctx.strokeStyle = '#ffd700';
+      }
+    } else {
+      ctx.strokeStyle = '#ffd700';
+    }
     ctx.stroke();
   }
 

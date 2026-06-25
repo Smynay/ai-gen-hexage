@@ -33,8 +33,6 @@ export const CONFIG = {
     tundra: '#5a6b4a',
     claimed: '#8ab87a',
     claimedPlayer: '#7acf5a',
-    hexBorder: '#1a1a2a',
-    hexBorderClaimed: '#3a7a3a',
     settlement: '#d4a050',
     lumberMill: '#8b6f47',
     quarry: '#7a7a7a',
