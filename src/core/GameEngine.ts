@@ -1,5 +1,5 @@
 import { Grid } from 'honeycomb-grid';
-import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal } from '../types';
+import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal, BuildingInfo } from '../types';
 import { GamePhase, BuildingType, EnemyType, ResourceType, Terrain } from '../types';
 import { hexNeighbors, hexDistance, coordKey, hexEqual, hexesInRadius, findPath } from './hex/HexGrid';
 import { Tile } from './hex/Tile';
@@ -48,6 +48,13 @@ export function createInitialState(stageIndex: number): GameState {
     tile.hp = 20;
     tile.maxHp = 20;
   });
+
+  const startTile = grid.getHex({ q: cx, r: cy });
+  if (startTile) {
+    for (const nb of hexNeighbors(grid as any, startTile)) {
+      nb.revealed = true;
+    }
+  }
 
   return {
     phase: GamePhase.Playing,
@@ -172,6 +179,7 @@ export function canBuild(state: GameState, coord: HexCoord, buildingType: Buildi
   if (!tile || !tile.claimed || !tile.claimedByPlayer || tile.buildings.length >= tile.buildingSlots) return false;
   const def = BUILDINGS[buildingType];
   if (!def.allowedTerrain.includes(tile.terrain)) return false;
+  if (buildingType === BuildingType.Settlement && tile.buildings.some((b: BuildingInfo) => b.type === BuildingType.Settlement)) return false;
   const r = state.resources;
   return (
     r.septims >= def.cost.septims &&

@@ -58,12 +58,26 @@ function terrainElevation(terrain: Terrain): number {
   }
 }
 
-function isAdjacentToClaimed(tile: any, claimedSet: Set<string>): boolean {
-  const dirs: [number, number][] = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
-  for (const [dq, dr] of dirs) {
-    if (claimedSet.has(`${tile.q + dq},${tile.r + dr}`)) return true;
+function fogDirection(tile: any, claimedSet: Set<string>): { dx: number; dy: number } | null {
+  const dirs: [number, number, number, number][] = [
+    [1, 0, Math.sqrt(3), 0],
+    [1, -1, Math.sqrt(3) / 2, -1.5],
+    [0, -1, -Math.sqrt(3) / 2, -1.5],
+    [-1, 0, -Math.sqrt(3), 0],
+    [-1, 1, -Math.sqrt(3) / 2, 1.5],
+    [0, 1, Math.sqrt(3) / 2, 1.5],
+  ];
+  let ax = 0, ay = 0;
+  let count = 0;
+  for (const [dq, dr, pdx, pdy] of dirs) {
+    if (claimedSet.has(`${tile.q + dq},${tile.r + dr}`)) {
+      ax += pdx;
+      ay += pdy;
+      count++;
+    }
   }
-  return false;
+  if (count === 0) return null;
+  return { dx: ax / count, dy: ay / count };
 }
 
 export function renderHexGrid(
@@ -98,8 +112,8 @@ export function renderHexGrid(
   tiles.sort((a, b) => (a.py + terrainElevation(a.tile.terrain)) - (b.py + terrainElevation(b.tile.terrain)));
 
   for (const { tile, px, py } of tiles) {
-    const adjacent = isAdjacentToClaimed(tile, claimedSet);
-    drawHexTile(ctx, tile, px, py, zoom, state, adjacent);
+    const fogDir = fogDirection(tile, claimedSet);
+    drawHexTile(ctx, tile, px, py, zoom, state, fogDir);
   }
 }
 
@@ -110,7 +124,7 @@ function drawHexTile(
   py: number,
   zoom: number,
   state: GameState,
-  adjacent: boolean,
+  fogDir: { dx: number; dy: number } | null,
 ): void {
   const elev = terrainElevation(tile.terrain) * zoom;
   const corners = tile.corners.map((c: any) => ({
@@ -154,15 +168,26 @@ function drawHexTile(
   }
 
   // Fog gradient for adjacent-to-claimed hexes
-  if (!tile.claimedByPlayer && adjacent) {
+  if (!tile.claimedByPlayer && fogDir) {
     const size = 40 * zoom;
-    const grad = ctx.createRadialGradient(px, py, 0, px, py, size * 0.9);
-    grad.addColorStop(0, 'rgba(10,10,20,0)');
-    grad.addColorStop(0.5, 'rgba(10,10,20,0)');
-    grad.addColorStop(0.75, 'rgba(10,10,20,0.5)');
-    grad.addColorStop(1, 'rgba(10,10,20,0.9)');
-    ctx.fillStyle = grad;
-    ctx.fill();
+    const len = Math.sqrt(fogDir.dx * fogDir.dx + fogDir.dy * fogDir.dy);
+    if (len > 0) {
+      const nx = fogDir.dx / len;
+      const ny = fogDir.dy / len;
+      const grad = ctx.createLinearGradient(
+        px - nx * size, py - ny * size,
+        px + nx * size, py + ny * size,
+      );
+      grad.addColorStop(0, 'rgba(10,10,20,1.0)');
+      grad.addColorStop(0.3, 'rgba(10,10,20,1.0)');
+      grad.addColorStop(0.4, 'rgba(10,10,20,0.9)');
+      grad.addColorStop(0.5, 'rgba(10,10,20,0.7)');
+      grad.addColorStop(0.6, 'rgba(10,10,20,0.2)');
+      grad.addColorStop(0.7, 'rgba(10,10,20,0)');
+      grad.addColorStop(1, 'rgba(10,10,20,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
   }
 
   // Highlight selected
