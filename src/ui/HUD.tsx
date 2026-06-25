@@ -19,71 +19,64 @@ const labelStyle: React.CSSProperties = {
   marginRight: 2,
 };
 
-const waveStyle: React.CSSProperties = {
-  position: 'absolute', top: '50%', left: '50%',
+const waveBlockStyle: React.CSSProperties = {
+  position: 'absolute', left: '50%', top: '50%',
   transform: 'translate(-50%, -50%)',
-  color: '#c04040', fontSize: '1.8rem',
-  fontWeight: 'bold', fontFamily: 'monospace',
-  textShadow: '0 0 20px rgba(192,64,64,0.5)',
-  pointerEvents: 'none', zIndex: 60,
+  display: 'flex', flexDirection: 'column',
+  alignItems: 'center', gap: 2,
 };
 
 export default function HUD() {
   const resources = useGameStore(s => s.resources);
   const wave = useGameStore(s => s.wave);
-  const waveTimer = useGameStore(s => s.wave.timer);
   const currentStage = useGameStore(s => s.currentStage);
+  const enemies = useGameStore(s => s.enemies);
 
   const stage = STAGES[currentStage];
   const stageName = stage?.name ?? '';
 
+  const allWavesDone = wave.current >= wave.total;
+  const waveStatus = allWavesDone
+    ? enemies.size > 0 ? `\u2694 ОСТАЛОСЬ ${enemies.size}` : 'ЗАЧИСТКА'
+    : wave.active
+      ? `\u2694 ВРАГИ ${enemies.size}`
+      : `${Math.ceil(wave.timer)}с`;
+
   return (
-    <>
-      <div style={hudStyle}>
-        <div style={resStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#ffd700' }}>
-            <span style={labelStyle}>G</span>
-            <span>{Math.floor(resources.septims)}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#8b6f47' }}>
-            <span style={labelStyle}>W</span>
-            <span>{Math.floor(resources.wood)}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#7a7a7a' }}>
-            <span style={labelStyle}>S</span>
-            <span>{Math.floor(resources.stone)}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#a0c040' }}>
-            <span style={labelStyle}>F</span>
-            <span>{Math.floor(resources.food)}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#c4a44a' }}>
-            <span style={labelStyle}>I</span>
-            <span>{Math.floor(resources.iron)}</span>
-          </div>
+    <div style={hudStyle}>
+      <div style={resStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#ffd700' }}>
+          <span style={labelStyle}>G</span>
+          <span>{Math.floor(resources.septims)}</span>
         </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <span style={{ color: '#7a7080' }}>{stageName}</span>
-          <span style={{ color: '#5a5060' }}>
-            ВОЛНА {wave.current + 1}/{wave.total}
-          </span>
-          {!wave.active && !wave.spawning && (
-            <span style={{ color: '#40a0ff' }}>
-              {Math.ceil(waveTimer)}с
-            </span>
-          )}
-          {wave.spawning && (
-            <span style={{ color: '#c04040' }}>
-              АТАКА!
-            </span>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#8b6f47' }}>
+          <span style={labelStyle}>W</span>
+          <span>{Math.floor(resources.wood)}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#7a7a7a' }}>
+          <span style={labelStyle}>S</span>
+          <span>{Math.floor(resources.stone)}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#a0c040' }}>
+          <span style={labelStyle}>F</span>
+          <span>{Math.floor(resources.food)}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#c4a44a' }}>
+          <span style={labelStyle}>I</span>
+          <span>{Math.floor(resources.iron)}</span>
         </div>
       </div>
-      {wave.spawning && (
-        <div style={waveStyle}>
-          ⚔ ВРАГИ НАСТУПАЮТ ⚔
+
+      <div style={waveBlockStyle}>
+        <div style={{ color: allWavesDone ? '#40c040' : wave.spawning ? '#c04040' : '#eae0d0', fontWeight: 'bold', fontSize: '0.9rem' }}>
+          {allWavesDone ? 'ВСЕ ВОЛНЫ' : `ВОЛНА ${wave.current + 1}/${wave.total}`}
         </div>
-      )}
-    </>
+        <div style={{ color: wave.spawning ? '#c04040' : '#40a0ff', fontSize: '0.85rem' }}>
+          {wave.spawning ? `\u2694 АТАКА! (${wave.spawnQueue.length})` : waveStatus}
+        </div>
+      </div>
+
+      <div style={{ color: '#7a7080' }}>{stageName}</div>
+    </div>
   );
 }
