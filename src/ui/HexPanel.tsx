@@ -78,7 +78,7 @@ export default function HexPanel() {
   const resources = useGameStore(s => s.resources);
 
   const stageDef = STAGES[currentStage];
-  const unlockedBuildings = stageDef?.unlockedBuildings ?? [];
+  const unlockedBuildings = stageDef?.unlockedBuildings ?? Object.values(BuildingType) as BuildingType[];
 
   const tile = selectedHex ? grid?.getHex?.({ q: selectedHex.q, r: selectedHex.r }) : null;
 

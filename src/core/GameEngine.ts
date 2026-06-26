@@ -129,7 +129,7 @@ export function createSandboxState(): GameState {
     initialResources: { septims: 100, wood: 100, stone: 100, food: 100, iron: 100 },
     waves: [],
     waveTimer: 5,
-    unlockedTechs: [],
+    unlockedTechs: Object.keys(TECHS),
     adminMode: true,
   });
 }
