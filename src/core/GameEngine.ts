@@ -1,5 +1,5 @@
 import { Grid } from 'honeycomb-grid';
-import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal, BuildingInfo } from '../types';
+import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal, BuildingInfo, Resources } from '../types';
 import { GamePhase, BuildingType, EnemyType, ResourceType, Terrain } from '../types';
 import { hexNeighbors, hexDistance, coordKey, hexEqual, hexesInRadius, findPath } from './hex/HexGrid';
 import { Tile } from './hex/Tile';
@@ -19,21 +19,31 @@ export function allocEnemyId(): number {
   return nextEnemyId++;
 }
 
-export function createInitialState(stageIndex: number): GameState {
-  const stage = STAGES[stageIndex];
-  const cx = stage.playerStart.q;
-  const cy = stage.playerStart.r;
+type GameConfig = {
+  stageIndex: number;
+  mapRadius: number;
+  playerStart: HexCoord;
+  terrains: Terrain[];
+  initialResources: Resources;
+  waves: WaveDefinition[];
+  waveTimer: number;
+  unlockedTechs: string[];
+  adminMode: boolean;
+};
 
-  const coords: HexCoord[] = hexesInRadius({ q: 0, r: 0 }, stage.mapRadius);
+function createGameState(config: GameConfig): GameState {
+  const { stageIndex, mapRadius, playerStart, terrains, initialResources, waves, waveTimer, unlockedTechs, adminMode } = config;
+
+  const coords = hexesInRadius({ q: 0, r: 0 }, mapRadius);
   const grid = new Grid(Tile, coords);
 
   const slotsMin = CONFIG.buildingSlots.min;
   const slotsMax = CONFIG.buildingSlots.max;
 
   (grid as any).forEach((tile: any) => {
-    const isPlayerStart = tile.q === cx && tile.r === cy;
-    const terrainIndex = Math.abs(tile.q * 7 + tile.r * 13) % stage.terrain.length;
-    tile.terrain = stage.terrain[terrainIndex];
+    const isPlayerStart = tile.q === playerStart.q && tile.r === playerStart.r;
+    const terrainIndex = Math.abs(tile.q * 7 + tile.r * 13) % terrains.length;
+    tile.terrain = terrains[terrainIndex];
     tile.claimed = isPlayerStart;
     tile.claimedByPlayer = isPlayerStart;
     tile.revealed = isPlayerStart;
@@ -49,7 +59,8 @@ export function createInitialState(stageIndex: number): GameState {
     tile.maxHp = 20;
   });
 
-  const startTile = grid.getHex({ q: cx, r: cy });
+  // Reveal start hex neighbours — shared across all levels
+  const startTile = grid.getHex(playerStart);
   if (startTile) {
     for (const nb of hexNeighbors(grid as any, startTile)) {
       nb.revealed = true;
@@ -60,23 +71,17 @@ export function createInitialState(stageIndex: number): GameState {
     phase: GamePhase.Playing,
     currentStage: stageIndex,
     grid,
-    resources: {
-      septims: stage.initialResources.septims ?? 0,
-      wood: stage.initialResources.wood ?? 0,
-      stone: stage.initialResources.stone ?? 0,
-      food: stage.initialResources.food ?? 0,
-      iron: stage.initialResources.iron ?? 0,
-    },
+    resources: initialResources,
     wave: {
       current: 0,
-      total: stage.waves.length,
-      timer: CONFIG.waveBaseTimer + stageIndex * CONFIG.waveTimerPerStage,
+      total: waves.length,
+      timer: waveTimer,
       active: false,
       spawning: false,
       spawnTimer: 0,
       spawnQueue: [],
     },
-    techs: stage.unlockedTechs.map(id => ({
+    techs: unlockedTechs.map(id => ({
       id,
       researched: false,
       inProgress: false,
@@ -89,64 +94,44 @@ export function createInitialState(stageIndex: number): GameState {
     selectedHex: null,
     tick: 0,
     stageResult: null,
-    adminMode: false,
-    adminWaves: null,
+    adminMode,
+    adminWaves: adminMode ? waves : null,
   };
 }
 
-export function createSandboxState(): GameState {
-  const mapRadius = 5;
-  const coords: HexCoord[] = hexesInRadius({ q: 0, r: 0 }, mapRadius);
-  const grid = new Grid(Tile, coords);
-
-  const sandboxWaves: WaveDefinition[] = [];
-
-  const allTerrain: Terrain[] = [Terrain.Plains, Terrain.Forest, Terrain.Mountain, Terrain.Water, Terrain.Snow, Terrain.Tundra];
-
-  (grid as any).forEach((tile: any) => {
-    const isPlayerStart = tile.q === 0 && tile.r === 0;
-    const terrainIndex = Math.abs(tile.q * 7 + tile.r * 13) % allTerrain.length;
-    tile.terrain = allTerrain[terrainIndex];
-    tile.claimed = isPlayerStart;
-    tile.claimedByPlayer = isPlayerStart;
-    tile.revealed = isPlayerStart;
-    tile.buildingSlots = isPlayerStart
-      ? CONFIG.buildingSlots.mainHex
-      : CONFIG.buildingSlots.min + Math.floor(Math.abs(tile.q * 17 + tile.r * 31) % (CONFIG.buildingSlots.max - CONFIG.buildingSlots.min + 1));
-    tile.buildings = isPlayerStart
-      ? [{ type: BuildingType.Settlement, level: 1, hp: 50, maxHp: 50, progress: 1 }]
-      : [];
-    tile.defenders = [];
-    tile.enemyUnits = [];
-    tile.hp = 20;
-    tile.maxHp = 20;
-  });
-
-  return {
-    phase: GamePhase.Playing,
-    currentStage: -1,
-    grid,
-    resources: { septims: 100, wood: 100, stone: 100, food: 100, iron: 100 },
-    wave: {
-      current: 0,
-      total: sandboxWaves.length,
-      timer: 5,
-      active: false,
-      spawning: false,
-      spawnTimer: 0,
-      spawnQueue: [],
+export function createInitialState(stageIndex: number): GameState {
+  const stage = STAGES[stageIndex];
+  return createGameState({
+    stageIndex,
+    mapRadius: stage.mapRadius,
+    playerStart: stage.playerStart,
+    terrains: stage.terrain,
+    initialResources: {
+      septims: stage.initialResources.septims ?? 0,
+      wood: stage.initialResources.wood ?? 0,
+      stone: stage.initialResources.stone ?? 0,
+      food: stage.initialResources.food ?? 0,
+      iron: stage.initialResources.iron ?? 0,
     },
-    techs: [],
-    enemies: new Map(),
-    cameraX: 0,
-    cameraY: 0,
-    cameraZoom: 1,
-    selectedHex: null,
-    tick: 0,
-    stageResult: null,
+    waves: stage.waves,
+    waveTimer: CONFIG.waveBaseTimer + stageIndex * CONFIG.waveTimerPerStage,
+    unlockedTechs: stage.unlockedTechs,
+    adminMode: false,
+  });
+}
+
+export function createSandboxState(): GameState {
+  return createGameState({
+    stageIndex: -1,
+    mapRadius: 5,
+    playerStart: { q: 0, r: 0 },
+    terrains: [Terrain.Plains, Terrain.Forest, Terrain.Mountain, Terrain.Water, Terrain.Snow, Terrain.Tundra],
+    initialResources: { septims: 100, wood: 100, stone: 100, food: 100, iron: 100 },
+    waves: [],
+    waveTimer: 5,
+    unlockedTechs: [],
     adminMode: true,
-    adminWaves: sandboxWaves,
-  };
+  });
 }
 
 export function findUnclaimedNeighbors(state: GameState): HexCoord[] {

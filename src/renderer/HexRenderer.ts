@@ -4,6 +4,8 @@ import { CONFIG } from '../config';
 
 const COLORS = CONFIG.colors;
 
+let fogCanvas: HTMLCanvasElement | undefined;
+
 const GRIDS: [number, number][][][] = [
   // Сетка A
   [
@@ -58,28 +60,6 @@ function terrainElevation(terrain: Terrain): number {
   }
 }
 
-function fogDirection(tile: any, claimedSet: Set<string>): { dx: number; dy: number } | null {
-  const dirs: [number, number, number, number][] = [
-    [1, 0, Math.sqrt(3), 0],
-    [1, -1, Math.sqrt(3) / 2, -1.5],
-    [0, -1, -Math.sqrt(3) / 2, -1.5],
-    [-1, 0, -Math.sqrt(3), 0],
-    [-1, 1, -Math.sqrt(3) / 2, 1.5],
-    [0, 1, Math.sqrt(3) / 2, 1.5],
-  ];
-  let ax = 0, ay = 0;
-  let count = 0;
-  for (const [dq, dr, pdx, pdy] of dirs) {
-    if (claimedSet.has(`${tile.q + dq},${tile.r + dr}`)) {
-      ax += pdx;
-      ay += pdy;
-      count++;
-    }
-  }
-  if (count === 0) return null;
-  return { dx: ax / count, dy: ay / count };
-}
-
 export function renderHexGrid(
   ctx: CanvasRenderingContext2D,
   state: GameState,
@@ -97,24 +77,73 @@ export function renderHexGrid(
   ctx.fillRect(0, 0, width, height);
 
   const tiles: { tile: any; px: number; py: number }[] = [];
-
-  const claimedSet = new Set<string>();
-  state.grid.forEach((t: any) => {
-    if (t.claimedByPlayer) claimedSet.add(`${t.q},${t.r}`);
-  });
+  const claimedTiles: { tile: any; px: number; py: number }[] = [];
 
   (state.grid as any).forEach((tile: any) => {
+    if (!tile.revealed) return;
     const px = tile.x * zoom + cx;
     const py = tile.y * zoom + cy;
     tiles.push({ tile, px, py });
+    if (tile.claimedByPlayer) {
+      claimedTiles.push({ tile, px, py });
+    }
   });
 
   tiles.sort((a, b) => (a.py + terrainElevation(a.tile.terrain)) - (b.py + terrainElevation(b.tile.terrain)));
 
   for (const { tile, px, py } of tiles) {
-    const fogDir = fogDirection(tile, claimedSet);
-    drawHexTile(ctx, tile, px, py, zoom, state, fogDir);
+    drawHexTile(ctx, tile, px, py, zoom, state);
   }
+
+  // Fog-of-war overlay on separate canvas (preserves tiles underneath)
+  if (!fogCanvas || fogCanvas.width !== width || fogCanvas.height !== height) {
+    fogCanvas = document.createElement('canvas');
+    fogCanvas.width = width;
+    fogCanvas.height = height;
+  }
+  const fctx = fogCanvas.getContext('2d')!;
+  fctx.clearRect(0, 0, width, height);
+  fctx.fillStyle = COLORS.fog;
+  fctx.fillRect(0, 0, width, height);
+
+  fctx.globalCompositeOperation = 'destination-out';
+
+  const numSteps = 20;
+  const maxScale = 2.0;
+
+  for (const { tile, px, py } of claimedTiles) {
+    const ox: number[] = [];
+    const oy: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      ox.push((tile.corners[i].x - tile.x) * zoom);
+      oy.push((tile.corners[i].y - tile.y) * zoom);
+    }
+
+    for (let step = numSteps - 1; step >= 0; step--) {
+      const scale = 1.0 + (step / (numSteps - 1)) * (maxScale - 1.0);
+      fctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        if (i === 0) fctx.moveTo(px + ox[i] * scale, py + oy[i] * scale);
+        else fctx.lineTo(px + ox[i] * scale, py + oy[i] * scale);
+      }
+      fctx.closePath();
+      fctx.fillStyle = 'rgba(255,255,255,0.12)';
+      fctx.fill();
+    }
+
+    // Final punch — fully clear fog from the exact hex shape
+    fctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      if (i === 0) fctx.moveTo(px + ox[i], py + oy[i]);
+      else fctx.lineTo(px + ox[i], py + oy[i]);
+    }
+    fctx.closePath();
+    fctx.fillStyle = 'rgba(255,255,255,1)';
+    fctx.fill();
+  }
+  fctx.globalCompositeOperation = 'source-over';
+
+  ctx.drawImage(fogCanvas, 0, 0);
 }
 
 function drawHexTile(
@@ -124,7 +153,6 @@ function drawHexTile(
   py: number,
   zoom: number,
   state: GameState,
-  fogDir: { dx: number; dy: number } | null,
 ): void {
   const elev = terrainElevation(tile.terrain) * zoom;
   const corners = tile.corners.map((c: any) => ({
@@ -157,63 +185,13 @@ function drawHexTile(
   }
   ctx.closePath();
 
-  const color = terrainColor(tile.terrain, tile.claimedByPlayer);
-  ctx.fillStyle = tile.revealed ? color : COLORS.fog;
+  ctx.fillStyle = terrainColor(tile.terrain, tile.claimedByPlayer);
   ctx.fill();
 
-  // Fog gradient for adjacent-to-claimed hexes
-  if (!tile.claimedByPlayer && fogDir) {
-    const fogSize = 40 * zoom;
-    const fogLen = Math.sqrt(fogDir.dx * fogDir.dx + fogDir.dy * fogDir.dy);
-    if (fogLen > 0) {
-      const nx = fogDir.dx / fogLen;
-      const ny = fogDir.dy / fogLen;
-      const grad = ctx.createLinearGradient(
-        px - nx * fogSize, py - ny * fogSize,
-        px + nx * fogSize, py + ny * fogSize,
-      );
-      grad.addColorStop(0, 'rgba(10,10,20,1.0)');
-      grad.addColorStop(0.3, 'rgba(10,10,20,1.0)');
-      grad.addColorStop(0.4, 'rgba(10,10,20,0.9)');
-      grad.addColorStop(0.5, 'rgba(10,10,20,0.7)');
-      grad.addColorStop(0.6, 'rgba(10,10,20,0.2)');
-      grad.addColorStop(0.7, 'rgba(10,10,20,0)');
-      grad.addColorStop(1, 'rgba(10,10,20,0)');
-      ctx.fillStyle = grad;
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(10,10,20,0.3)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-  }
-
-  // Highlight selected (after fog — stroke fades with fog gradient on non-claimed tiles)
+  // Highlight selected
   if (state.selectedHex && state.selectedHex.q === tile.q && state.selectedHex.r === tile.r) {
     ctx.lineWidth = 2.5;
-    if (!tile.claimedByPlayer && fogDir) {
-      const fogSize = 40 * zoom;
-      const fogLen = Math.sqrt(fogDir.dx * fogDir.dx + fogDir.dy * fogDir.dy);
-      if (fogLen > 0) {
-        const nx = fogDir.dx / fogLen;
-        const ny = fogDir.dy / fogLen;
-        const grad = ctx.createLinearGradient(
-          px - nx * fogSize, py - ny * fogSize,
-          px + nx * fogSize, py + ny * fogSize,
-        );
-        grad.addColorStop(0, 'rgba(255,215,0,0)');
-        grad.addColorStop(0.3, 'rgba(255,215,0,0)');
-        grad.addColorStop(0.4, 'rgba(255,215,0,0.1)');
-        grad.addColorStop(0.5, 'rgba(255,215,0,0.3)');
-        grad.addColorStop(0.6, 'rgba(255,215,0,0.8)');
-        grad.addColorStop(0.7, 'rgba(255,215,0,1)');
-        grad.addColorStop(1, 'rgba(255,215,0,1)');
-        ctx.strokeStyle = grad;
-      } else {
-        ctx.strokeStyle = '#ffd700';
-      }
-    } else {
-      ctx.strokeStyle = '#ffd700';
-    }
+    ctx.strokeStyle = '#ffd700';
     ctx.stroke();
   }
 
