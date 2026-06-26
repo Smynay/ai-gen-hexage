@@ -93,7 +93,7 @@ export default function GameCanvas() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === '`' || e.key === '~') {
         e.preventDefault();
-        togglePanel();
+        togglePanel('admin');
       }
     };
     window.addEventListener('keydown', handler);

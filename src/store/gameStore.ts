@@ -21,7 +21,7 @@ import { ENEMIES } from '../data/enemies';
 interface GameStore extends GameState {
   completedStages: number[];
   paintTerrain: Terrain | null;
-  panelVisible: boolean;
+  openPanel: 'tech' | 'admin' | null;
   startStage: (index: number) => void;
   startTestLevel: () => void;
   goToMenu: () => void;
@@ -48,7 +48,7 @@ interface GameStore extends GameState {
   removeAdminWave: (index: number) => void;
   setAdminBuildingSlots: (coord: HexCoord, slots: number) => void;
   toggleClaimed: (coord: HexCoord) => void;
-  togglePanel: () => void;
+  togglePanel: (panel: 'tech' | 'admin') => void;
 }
 
 const emptyState = (): GameState => ({
@@ -83,7 +83,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   ...emptyState(),
   completedStages: loadProgress(),
   paintTerrain: null as Terrain | null,
-  panelVisible: true,
+  openPanel: null as 'tech' | 'admin' | null,
 
   startStage: (index: number) => {
     resetEnemyId();
@@ -94,6 +94,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentStage: index,
       completedStages: loadProgress(),
       paintTerrain: null,
+      openPanel: null,
     });
   },
 
@@ -104,11 +105,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...state,
       completedStages: loadProgress(),
       paintTerrain: null,
+      openPanel: null,
     });
   },
 
-  goToMenu: () => set({ phase: GamePhase.Menu, stageResult: null }),
-  goToStageSelect: () => set({ phase: GamePhase.StageSelect }),
+  goToMenu: () => set({ phase: GamePhase.Menu, stageResult: null, openPanel: null }),
+  goToStageSelect: () => set({ phase: GamePhase.StageSelect, openPanel: null }),
 
   gameLoopTick: () => {
     const state = get();
@@ -302,5 +304,5 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  togglePanel: () => set(s => ({ panelVisible: !s.panelVisible })),
+  togglePanel: (panel: 'tech' | 'admin') => set(s => ({ openPanel: s.openPanel === panel ? null : panel })),
 }));

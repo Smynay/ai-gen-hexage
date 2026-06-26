@@ -17,7 +17,7 @@ const appStyle: React.CSSProperties = {
 export default function App() {
   const phase = useGameStore(s => s.phase);
   const adminMode = useGameStore(s => s.adminMode);
-  const panelVisible = useGameStore(s => s.panelVisible);
+  const openPanel = useGameStore(s => s.openPanel);
 
   return (
     <div style={appStyle}>
@@ -28,8 +28,8 @@ export default function App() {
           <GameCanvas />
           <HUD />
           <HexPanel />
-          <TechPanel />
-          {adminMode && panelVisible && <AdminPanel />}
+          {openPanel === 'tech' && <TechPanel />}
+          {adminMode && openPanel === 'admin' && <AdminPanel />}
         </>
       )}
       {phase === GamePhase.Victory && <GameOverScreen />}
