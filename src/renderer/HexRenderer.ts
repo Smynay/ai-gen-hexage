@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 const COLORS = CONFIG.colors;
 
 let fogCanvas: HTMLCanvasElement | undefined;
+let borderCanvas: HTMLCanvasElement | undefined;
 
 const GRIDS: [number, number][][][] = [
   // Сетка A
@@ -37,8 +38,7 @@ function gridVariant(q: number, r: number): number {
   return Math.abs(q * 17 + r * 31) % GRIDS.length;
 }
 
-function terrainColor(terrain: Terrain, claimed: boolean): string {
-  if (claimed) return COLORS.claimedPlayer;
+function terrainColor(terrain: Terrain): string {
   switch (terrain) {
     case Terrain.Plains: return COLORS.plains;
     case Terrain.Forest: return COLORS.forest;
@@ -78,8 +78,10 @@ export function renderHexGrid(
 
   const tiles: { tile: any; px: number; py: number }[] = [];
   const claimedTiles: { tile: any; px: number; py: number }[] = [];
+  const claimedSet = new Set<string>();
 
   (state.grid as any).forEach((tile: any) => {
+    if (tile.claimedByPlayer) claimedSet.add(`${tile.q},${tile.r}`);
     if (!tile.revealed) return;
     const px = tile.x * zoom + cx;
     const py = tile.y * zoom + cy;
@@ -94,6 +96,55 @@ export function renderHexGrid(
   for (const { tile, px, py } of tiles) {
     drawHexTile(ctx, tile, px, py, zoom, state);
   }
+
+  // Territory border overlay — green edges where claimed borders unclaimed
+  if (!borderCanvas || borderCanvas.width !== width || borderCanvas.height !== height) {
+    borderCanvas = document.createElement('canvas');
+    borderCanvas.width = width;
+    borderCanvas.height = height;
+  }
+  const bctx = borderCanvas.getContext('2d')!;
+  bctx.clearRect(0, 0, width, height);
+
+  const axialNeighbors: [number, number][] = [
+    [1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1],
+  ];
+
+  for (const { tile, px, py } of claimedTiles) {
+    const ox: number[] = [];
+    const oy: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      ox.push((tile.corners[i].x - tile.x) * zoom);
+      oy.push((tile.corners[i].y - tile.y) * zoom);
+    }
+
+    bctx.lineWidth = 3 * zoom;
+    bctx.strokeStyle = 'rgba(122,207,90,0.35)';
+    bctx.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      const [dq, dr] = axialNeighbors[i];
+      if (claimedSet.has(`${tile.q + dq},${tile.r + dr}`)) continue;
+      const next = (i + 1) % 6;
+      bctx.beginPath();
+      bctx.moveTo(px + ox[i], py + oy[i]);
+      bctx.lineTo(px + ox[next], py + oy[next]);
+      bctx.stroke();
+    }
+
+    bctx.lineWidth = 1.5 * zoom;
+    bctx.strokeStyle = 'rgba(170,255,130,0.55)';
+    for (let i = 0; i < 6; i++) {
+      const [dq, dr] = axialNeighbors[i];
+      if (claimedSet.has(`${tile.q + dq},${tile.r + dr}`)) continue;
+      const next = (i + 1) % 6;
+      bctx.beginPath();
+      bctx.moveTo(px + ox[i], py + oy[i]);
+      bctx.lineTo(px + ox[next], py + oy[next]);
+      bctx.stroke();
+    }
+  }
+
+  ctx.drawImage(borderCanvas, 0, 0);
 
   // Fog-of-war overlay on separate canvas (preserves tiles underneath)
   if (!fogCanvas || fogCanvas.width !== width || fogCanvas.height !== height) {
@@ -185,7 +236,7 @@ function drawHexTile(
   }
   ctx.closePath();
 
-  ctx.fillStyle = terrainColor(tile.terrain, tile.claimedByPlayer);
+  ctx.fillStyle = terrainColor(tile.terrain);
   ctx.fill();
 
   // Highlight selected

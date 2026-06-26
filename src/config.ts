@@ -31,8 +31,6 @@ export const CONFIG = {
     water: '#2a4a6b',
     snow: '#c8d0d4',
     tundra: '#5a6b4a',
-    claimed: '#8ab87a',
-    claimedPlayer: '#7acf5a',
     settlement: '#d4a050',
     lumberMill: '#8b6f47',
     quarry: '#7a7a7a',
