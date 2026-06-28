@@ -25,19 +25,48 @@ permission:
 
 ```
 src/
-├── config.ts          # Все игровые константы (размер гекса, цвета, таймеры)
-├── types.ts           # Все типы (const + as const, без enum)
-├── core/              # Чистая логика (НЕ зависит от React/DOM/MobX)
-│   ├── hex/HexGrid.ts # Axial-координаты, соседи, расстояние, BFS
-│   └── GameEngine.ts  # Главный игровой цикл (560 строк)
-├── store/gameStore.ts # MobX store (makeAutoObservable, все actions)
-├── renderer/HexRenderer.ts # Canvas 2D рендеринг (чистые функции)
-├── data/              # Статические данные (as const)
-│   ├── stages.ts      # 6 этапов кампании
-│   ├── buildings.ts   # 10 типов зданий
-│   ├── enemies.ts     # 9 типов врагов
-│   └── techs.ts       # 7 исследований
-└── ui/                # React-компоненты
+├── main.tsx              # Точка входа React
+├── App.tsx               # Корневой компонент
+├── config.ts             # Все игровые константы (размер гекса, цвета, таймеры)
+├── types.ts              # Все типы (const + as const, без enum)
+├── boot/                 # Инициализация и DI
+│   ├── dependencies.ts   # GameContext синглтон (config + data)
+│   └── createGame.ts     # Фабрика начального GameState
+├── core/                 # Чистая логика (НЕ зависит от React/DOM/MobX)
+│   ├── interfaces.ts     # GameContext, GameData, GameConfig
+│   ├── GameEngine.ts     # Игровой цикл + публичные API (build, claim, attack)
+│   ├── hex/
+│   │   ├── HexGrid.ts    # Axial-координаты, соседи, расстояние, BFS
+│   │   ├── HexGridAdapter.ts # Адаптер Map ↔ HexGrid
+│   │   └── Tile.ts       # Тип HexTile
+│   ├── systems/          # Системы игрового цикла
+│   │   ├── ResourceSystem.ts   # Добыча ресурсов
+│   │   ├── BuildingSystem.ts   # Прогресс строительства
+│   │   ├── ResearchSystem.ts   # Прогресс исследований
+│   │   ├── WaveSystem.ts       # Таймер волн, спавн врагов
+│   │   ├── MovementSystem.ts   # Движение врагов (BFS)
+│   │   ├── CombatSystem.ts     # Бой (защитные здания + рукопашная)
+│   │   ├── CleanupSystem.ts    # Очистка мёртвых врагов + награда
+│   │   └── GoalSystem.ts       # Проверка победы/поражения
+│   └── world/
+│       └── WorldQuery.ts # Запросы к миру (playerHexes)
+├── store/                # MobX stores
+│   ├── gameStore.ts      # Состояние игры (makeAutoObservable)
+│   ├── progressStore.ts  # Прогресс кампании (localStorage)
+│   └── adminStore.ts     # Админ-режим (разработка)
+├── renderer/             # Canvas 2D рендеринг (слои)
+│   ├── HexRenderer.ts    # Оркестратор (камера, зум, вызов слоёв)
+│   ├── TerrainLayer.ts   # Рельеф + возвышенности
+│   ├── BuildingLayer.ts  # Здания (прогресс строительства)
+│   ├── OverlayLayer.ts   # UI-оверлеи (выделение)
+│   ├── FogLayer.ts       # Туман войны
+│   └── BorderLayer.ts    # Границы + подсветка
+├── data/                 # Статические данные (as const)
+│   ├── stages.ts         # 6 этапов кампании
+│   ├── buildings.ts      # Типы зданий
+│   ├── enemies.ts        # Типы врагов
+│   └── techs.ts          # 7 исследований
+└── ui/                   # React-компоненты
     ├── MainMenu.tsx, StageSelect.tsx, GameCanvas.tsx
     ├── HUD.tsx, HexPanel.tsx, TechPanel.tsx
     ├── GameOver.tsx, AdminPanel.tsx
@@ -56,8 +85,24 @@ src/
 
 ### Разделение core / ui
 - `src/core/` — **НИКОГДА** не импортирует React, MobX, DOM.
-- Игровая логика только в `GameEngine.ts` и `HexGrid.ts`.
+- Игровая логика в `src/core/`: `GameEngine.ts` (цикл + API), `systems/` (пошаговые системы), `hex/` (геометрия).
 - UI только в `src/ui/`. Может импортировать `core/`, `store/`, `renderer/`.
+
+### Dependency Injection (GameContext)
+- Чистые функции core/ принимают `ctx: GameContext` параметром.
+- Контекст содержит `data: GameData` и `config: GameConfig`.
+- Новый код НЕ импортирует `gameContext` напрямую из `boot/dependencies.ts`.
+- `store/` и `ui/` могут использовать `gameContext` синглтон.
+
+### Systems (core/systems/)
+- Каждая система — отдельный файл с чистыми функциями `tick*()`.
+- Системы не общаются друг с другом напрямую — только через мутации `GameState`.
+- Новая механика = новый файл системы, не расширение существующих.
+
+### Renderer-слои
+- Каждый визуальный элемент — отдельный слой в `src/renderer/`.
+- `HexRenderer.ts` — оркестратор, вызывает слои в порядке: Terrain → Building → Border → Overlay → Fog.
+- Новый визуал = новый слой.
 
 ### MobX
 - Store: `makeAutoObservable(this)` в конструкторе.

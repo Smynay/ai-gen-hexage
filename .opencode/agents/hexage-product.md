@@ -30,15 +30,35 @@ permission:
 
 ```
 src/
-├── config.ts          # Все игровые константы
-├── types.ts           # Все типы (const + as const, без enum)
-├── core/              # Чистая логика (НЕ зависит от React/DOM)
-│   ├── hex/HexGrid.ts # Axial-координаты, соседи, BFS
-│   └── GameEngine.ts  # Главный игровой цикл
-├── store/gameStore.ts # MobX store (makeAutoObservable)
-├── renderer/HexRenderer.ts # Canvas 2D рендеринг
-├── data/              # Статические данные (stages, buildings, enemies, techs)
-└── ui/                # React-компоненты
+├── config.ts              # Все игровые константы
+├── types.ts               # Все типы (const + as const, без enum)
+├── main.tsx               # Точка входа React
+├── App.tsx                # Корневой компонент
+├── boot/
+│   ├── dependencies.ts    # GameContext синглтон (config + data)
+│   └── createGame.ts      # Фабрика начального GameState
+├── core/                  # Чистая логика (НЕ зависит от React/DOM)
+│   ├── interfaces.ts      # GameData, GameConfig, GameContext
+│   ├── GameEngine.ts      # Игровой цикл + публичные API
+│   ├── hex/
+│   │   ├── HexGrid.ts     # Axial-координаты, соседи, BFS
+│   │   ├── HexGridAdapter.ts
+│   │   └── Tile.ts
+│   ├── systems/           # Системы игрового цикла (8 файлов)
+│   └── world/WorldQuery.ts
+├── store/
+│   ├── gameStore.ts       # MobX store (makeAutoObservable)
+│   ├── progressStore.ts   # Прогресс кампании (localStorage)
+│   └── adminStore.ts      # Админ-режим (разработка)
+├── renderer/              # Canvas 2D рендеринг (слои)
+│   ├── HexRenderer.ts     # Оркестратор
+│   ├── TerrainLayer.ts
+│   ├── BuildingLayer.ts
+│   ├── OverlayLayer.ts
+│   ├── FogLayer.ts
+│   └── BorderLayer.ts
+├── data/                  # Статические данные (stages, buildings, enemies, techs)
+└── ui/                    # React-компоненты
 ```
 
 ## GitHub
@@ -178,6 +198,13 @@ Parent epic: hexage#N
 Ты реализуешь фичу для hexage. Прочитай `AGENTS.md` и design doc от архитектора (hexage#N).
 
 **Что реализовать**: <спецификация>
+
+**Архитектурные правила:**
+- core/ — чистая логика, НИКОГДА не импортирует React/MobX/DOM
+- Новый код core/ принимает `ctx: GameContext` параметром (DI)
+- Новая механика = новый файл в `systems/`, не расширение существующих
+- Новый визуал = новый слой в `renderer/`, не расширение существующих
+- Типы через `const` + `as const`, без `enum`
 
 **Проверки**:
 ```bash
