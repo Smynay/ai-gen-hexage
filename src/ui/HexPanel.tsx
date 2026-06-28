@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
+import { adminStore } from '../store/adminStore';
 import { BuildingType } from '../types';
 import { BUILDINGS } from '../data/buildings';
 import { STAGES } from '../data/stages';
@@ -70,8 +71,9 @@ function canAfford(resources: any, def: any): boolean {
 export default observer(function HexPanel() {
   const {
     selectedHex, claimSelected, buildOnSelected, reclaimSelected,
-    currentStage, grid, resources, adminMode, openPanel, togglePanel,
+    currentStage, grid, resources, openPanel, togglePanel,
   } = gameStore;
+  const { adminMode } = adminStore;
 
   const stageDef = STAGES[currentStage];
   const unlockedBuildings = stageDef?.unlockedBuildings ?? Object.values(BuildingType) as BuildingType[];

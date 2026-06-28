@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
+import { progressStore } from '../store/progressStore';
 import { STAGES } from '../data/stages';
 
 const containerStyle: React.CSSProperties = {
@@ -40,7 +41,8 @@ const backBtnStyle: React.CSSProperties = {
 };
 
 export default observer(function StageSelect() {
-  const { startStage, goToMenu, completedStages } = gameStore;
+  const { startStage, goToMenu } = gameStore;
+  const { completedStages } = progressStore;
 
   const isUnlocked = (id: number) => completedStages.includes(id - 1) || id === 1;
 

@@ -1,4 +1,3 @@
-import { ResourceType } from '../types';
 import type { Tech } from '../types';
 
 export const TECHS: Record<string, Tech> = {
