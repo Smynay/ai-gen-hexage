@@ -25,9 +25,9 @@ jobs:
         id: base
         run: |
           if [[ "${{ github.ref_name }}" == "dev" ]]; then
-            echo "path=/dev/" >> $GITHUB_OUTPUT
+            echo "path=dev" >> $GITHUB_OUTPUT
           else
-            echo "path=/" >> $GITHUB_OUTPUT
+            echo "path=." >> $GITHUB_OUTPUT
           fi
 
       - name: Deploy
