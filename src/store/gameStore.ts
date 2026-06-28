@@ -24,7 +24,16 @@ function loadProgress(): number[] {
     const data = localStorage.getItem(SAVE_KEY);
     if (data) return JSON.parse(data);
   } catch {}
-  return [1];
+  return [];
+}
+
+function saveProgress(stageIndex: number) {
+  const completed = loadProgress();
+  const next = stageIndex + 1;
+  if (!completed.includes(next)) {
+    completed.push(next);
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(completed)); } catch {}
+  }
 }
 
 class GameStore implements GameState {
@@ -71,14 +80,28 @@ class GameStore implements GameState {
   }
 
   goToMenu() {
+    if (this.stageResult === 'victory' && !this.adminMode) {
+      saveProgress(this.currentStage);
+      this.completedStages = loadProgress();
+    }
     this.phase = GamePhase.Menu;
     this.stageResult = null;
     this.openPanel = null;
   }
 
   goToStageSelect() {
+    if (this.stageResult === 'victory' && !this.adminMode) {
+      saveProgress(this.currentStage);
+      this.completedStages = loadProgress();
+    }
     this.phase = GamePhase.StageSelect;
+    this.stageResult = null;
     this.openPanel = null;
+  }
+
+  resetProgress() {
+    try { localStorage.removeItem(SAVE_KEY); } catch {}
+    this.completedStages = [];
   }
 
   gameLoopTick() {
@@ -86,11 +109,8 @@ class GameStore implements GameState {
     gameTick(this);
     // re-read phase after gameTick may have changed it
     if ((this.phase as GamePhase) === GamePhase.Victory && !this.adminMode) {
-      const completed = loadProgress();
-      if (!completed.includes(this.currentStage + 1)) {
-        completed.push(this.currentStage + 1);
-        try { localStorage.setItem(SAVE_KEY, JSON.stringify(completed)); } catch {}
-      }
+      saveProgress(this.currentStage);
+      this.completedStages = loadProgress();
     }
   }
 

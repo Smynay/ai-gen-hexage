@@ -42,7 +42,7 @@ const backBtnStyle: React.CSSProperties = {
 export default observer(function StageSelect() {
   const { startStage, goToMenu, completedStages } = gameStore;
 
-  const isUnlocked = (id: number) => completedStages.includes(id) || id === 1;
+  const isUnlocked = (id: number) => completedStages.includes(id - 1) || id === 1;
 
   return (
     <div style={containerStyle}>

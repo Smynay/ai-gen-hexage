@@ -30,8 +30,17 @@ const btnStyle: React.CSSProperties = {
   margin: '6px',
 };
 
+const secondaryBtnStyle: React.CSSProperties = {
+  padding: '10px 28px', fontSize: '1rem',
+  background: 'transparent', color: '#5a7080',
+  border: '1px solid #1a2a3e', cursor: 'pointer',
+  fontFamily: 'monospace', margin: '6px',
+};
+
 export default observer(function MainMenu() {
-  const { goToStageSelect, startTestLevel } = gameStore;
+  const { goToStageSelect, startTestLevel, completedStages, resetProgress } = gameStore;
+
+  const hasProgress = completedStages.length > 0;
 
   return (
     <div style={containerStyle}>
@@ -40,18 +49,21 @@ export default observer(function MainMenu() {
       <div style={{ color: '#7a7080', fontSize: '1rem', marginBottom: '1.5rem' }}>
         Займи гексы. Строй. Выживи.
       </div>
-      <button style={btnStyle} onClick={goToStageSelect}>
-        ▸ НАЧАТЬ КАМПАНИЮ
-      </button>
+
+      {hasProgress && (
+        <button style={btnStyle} onClick={goToStageSelect}>
+          ▸ ПРОДОЛЖИТЬ КОМПАНИЮ
+        </button>
+      )}
+
       <button
-        onClick={startTestLevel}
-        style={{
-          padding: '10px 28px', fontSize: '1rem',
-          background: 'transparent', color: '#5a7080',
-          border: '1px solid #1a2a3e', cursor: 'pointer',
-          fontFamily: 'monospace', margin: '6px',
-        }}
+        style={hasProgress ? secondaryBtnStyle : btnStyle}
+        onClick={() => { if (hasProgress) resetProgress(); goToStageSelect(); }}
       >
+        ▸ {hasProgress ? 'НАЧАТЬ НОВУЮ КАМПАНИЮ' : 'НАЧАТЬ КАМПАНИЮ'}
+      </button>
+
+      <button style={secondaryBtnStyle} onClick={startTestLevel}>
         ▸ ТЕСТОВЫЙ УРОВЕНЬ
       </button>
       <div style={{ marginTop: '2rem', color: '#3a3040', fontSize: '0.85rem' }}>
