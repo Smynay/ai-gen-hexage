@@ -2,41 +2,49 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, dev]
-  workflow_dispatch:
-
-permissions:
-  contents: write
+    branches: [master, main, dev]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Determine deploy target
-        id: target
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "base=/" >> $GITHUB_OUTPUT
-            echo "dest=." >> $GITHUB_OUTPUT
-          else
-            echo "base=/dev/" >> $GITHUB_OUTPUT
-            echo "dest=dev" >> $GITHUB_OUTPUT
-          fi
+          node-version: '22'
 
       - run: npm ci
-      - run: npx vite build --base "${{ steps.target.outputs.base }}"
+
+      - name: Determine Vite base
+        id: vitebase
+        run: |
+          if [[ "${{ github.ref_name }}" == "dev" ]]; then
+            echo "base=/ai-gen-hexage/dev/" >> $GITHUB_OUTPUT
+          else
+            echo "base=/ai-gen-hexage/" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build
+        run: tsc -b && npx vite build --base ${{ steps.vitebase.outputs.base }} --outDir dist
+
+      - name: Determine deploy path
+        id: base
+        run: |
+          if [[ "${{ github.ref_name }}" == "dev" ]]; then
+            echo "path=dev" >> $GITHUB_OUTPUT
+          else
+            echo "path=." >> $GITHUB_OUTPUT
+          fi
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          destination_dir: ${{ steps.target.outputs.dest }}
+          destination_dir: ${{ steps.base.outputs.path }}
           keep_files: true
