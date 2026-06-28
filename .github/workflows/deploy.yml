@@ -19,9 +19,20 @@ jobs:
           node-version: '22'
 
       - run: npm ci
-      - run: tsc -b && npx vite build --base ./ --outDir dist
 
-      - name: Determine base path
+      - name: Determine Vite base
+        id: vitebase
+        run: |
+          if [[ "${{ github.ref_name }}" == "dev" ]]; then
+            echo "base=/dev/" >> $GITHUB_OUTPUT
+          else
+            echo "base=/" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build
+        run: tsc -b && npx vite build --base ${{ steps.vitebase.outputs.base }} --outDir dist
+
+      - name: Determine deploy path
         id: base
         run: |
           if [[ "${{ github.ref_name }}" == "dev" ]]; then
