@@ -1,7 +1,7 @@
 import { Grid } from 'honeycomb-grid';
 import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal, BuildingInfo, Resources } from '../types';
 import { GamePhase, BuildingType, EnemyType, ResourceType, Terrain } from '../types';
-import { hexNeighbors, hexDistance, coordKey, hexEqual, hexesInRadius, findPath } from './hex/HexGrid';
+import { hexNeighbors, hexDistance, hexEqual, hexesInRadius, findPath } from './hex/HexGrid';
 import { Tile } from './hex/Tile';
 import { BUILDINGS } from '../data/buildings';
 import { ENEMIES } from '../data/enemies';
@@ -91,7 +91,7 @@ function createGameState(config: GameConfig): GameState {
     cameraX: 0,
     cameraY: 0,
     cameraZoom: 1,
-    selectedHex: null,
+    selectedHex: playerStart,
     tick: 0,
     stageResult: null,
     adminMode,
@@ -132,23 +132,6 @@ export function createSandboxState(): GameState {
     unlockedTechs: Object.keys(TECHS),
     adminMode: true,
   });
-}
-
-export function findUnclaimedNeighbors(state: GameState): HexCoord[] {
-  const set = new Set<string>();
-  const result: HexCoord[] = [];
-  (state.grid as any).forEach((tile: any) => {
-    if (tile.claimed && tile.claimedByPlayer) {
-      for (const nb of hexNeighbors(state.grid, tile)) {
-        const nk = coordKey(nb);
-        if (!set.has(nk) && !nb.claimed && nb.terrain !== 'water') {
-          set.add(nk);
-          result.push(nb);
-        }
-      }
-    }
-  });
-  return result;
 }
 
 export function getClaimCost() {

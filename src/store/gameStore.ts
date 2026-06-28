@@ -4,7 +4,6 @@ import { GamePhase, BuildingType } from '../types';
 import {
   createInitialState,
   gameTick,
-  findUnclaimedNeighbors,
   claimHex,
   startBuilding,
   canBuild,
@@ -127,14 +126,6 @@ class GameStore implements GameState {
     const coord = this.selectedHex;
     if (!coord) return false;
     return canBuild(this, coord, type);
-  }
-
-  canClaimAny(): boolean {
-    return findUnclaimedNeighbors(this).length > 0;
-  }
-
-  unclaimedNeighbors(): HexCoord[] {
-    return findUnclaimedNeighbors(this);
   }
 
   canResearchTech(techId: string): boolean {
