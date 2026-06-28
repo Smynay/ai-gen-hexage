@@ -11,6 +11,7 @@ import { tickMovement } from './systems/MovementSystem';
 import { tickCombat } from './systems/CombatSystem';
 import { tickCleanup } from './systems/CleanupSystem';
 import { tickGoals } from './systems/GoalSystem';
+import { invalidatePlayerHexes } from './world/WorldQuery';
 
 let nextEnemyId = 1;
 
@@ -78,6 +79,7 @@ export function claimHex(state: GameState, coord: HexCoord, ctx: GameContext = g
   tile.claimed = true;
   tile.claimedByPlayer = true;
   tile.revealed = true;
+  invalidatePlayerHexes();
   for (const nb of hexNeighbors(state.grid, tile)) {
     nb.revealed = true;
   }
@@ -122,6 +124,7 @@ export function reclaimHex(state: GameState, coord: HexCoord, selected: Building
   state.resources.iron -= cost.iron;
   tile.claimedByPlayer = true;
   tile.destroyedBuildings = [];
+  invalidatePlayerHexes();
   for (const bt of selected) {
     const def = ctx.data.buildings[bt];
     tile.buildings.push({

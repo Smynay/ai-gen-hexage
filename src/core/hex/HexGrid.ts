@@ -1,7 +1,5 @@
-import { Direction } from 'honeycomb-grid';
 import type { HexCoord, IHexGrid, IHexTile } from '../../types';
 
-export { Direction } from 'honeycomb-grid';
 export type { HexCoord } from '../../types';
 
 export function hexEqual(a: HexCoord, b: HexCoord): boolean {
@@ -16,10 +14,8 @@ export function hexKey(q: number, r: number): string {
   return `${q},${r}`;
 }
 
-const POINTY_DIRS: Direction[] = [
-  Direction.NE, Direction.E, Direction.SE,
-  Direction.SW, Direction.W, Direction.NW,
-];
+// Pointy-top hex directions (NE, E, SE, SW, W, NW)
+const POINTY_DIRS = [0, 1, 2, 3, 4, 5] as const;
 
 export function hexNeighbors(grid: IHexGrid, coord: HexCoord): IHexTile[] {
   const result: IHexTile[] = [];

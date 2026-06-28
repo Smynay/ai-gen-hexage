@@ -1,6 +1,7 @@
 import type { GameState } from '../../types';
 import { GamePhase, EnemyType } from '../../types';
 import type { GameContext } from '../interfaces';
+import { countClaimedHexes } from '../world/WorldQuery';
 
 export function tickGoals(state: GameState, ctx: GameContext): void {
   const { data, config: cfg } = ctx;
@@ -30,8 +31,7 @@ export function tickGoals(state: GameState, ctx: GameContext): void {
       return state.wave.current >= goal.target && state.enemies.size === 0;
     }
     if (goal.type === 'claim_hexes') {
-      let count = 0;
-      state.grid.forEach((tile) => { if (tile.claimedByPlayer) count++; });
+      const count = countClaimedHexes(state);
       return count >= goal.target;
     }
     if (goal.type === 'defeat_boss') {
@@ -48,8 +48,7 @@ export function tickGoals(state: GameState, ctx: GameContext): void {
     state.stageResult = 'victory';
   }
 
-  let playerHexes = 0;
-  state.grid.forEach((tile) => { if (tile.claimedByPlayer) playerHexes++; });
+  const playerHexes = countClaimedHexes(state);
   if (playerHexes === 0) {
     state.phase = GamePhase.Defeat;
     state.stageResult = 'defeat';

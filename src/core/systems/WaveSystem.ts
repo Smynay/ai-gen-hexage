@@ -2,22 +2,26 @@ import type { GameState, HexCoord, WaveDefinition, EnemyUnit } from '../../types
 import { EnemyType } from '../../types';
 import { hexNeighbors } from '../hex/HexGrid';
 import { allocEnemyId } from '../GameEngine';
-import { findClosestPlayerHex } from './MovementSystem';
+import { getPlayerHexes, findClosestPlayerHex } from '../world/WorldQuery';
 import type { GameContext } from '../interfaces';
 
 function getSpawnHexes(state: GameState): HexCoord[] {
   const candidates: HexCoord[] = [];
-  state.grid.forEach((tile) => {
-    if (!tile.claimed && tile.terrain !== 'water') {
-      for (const nb of hexNeighbors(state.grid, tile)) {
-        if (nb.claimedByPlayer) {
-          candidates.push(tile);
-          break;
-        }
+  const seen = new Set<string>();
+
+  // Ищем неподконтрольные гексы, соседние с игроком
+  for (const pCoord of getPlayerHexes(state)) {
+    for (const nb of hexNeighbors(state.grid, pCoord)) {
+      const key = `${nb.q},${nb.r}`;
+      if (!nb.claimed && nb.terrain !== 'water' && !seen.has(key)) {
+        seen.add(key);
+        candidates.push({ q: nb.q, r: nb.r });
       }
     }
-  });
+  }
+
   if (candidates.length === 0) {
+    // Запасной вариант: любые неподконтрольные гексы
     state.grid.forEach((tile) => {
       if (!tile.claimed && tile.terrain !== 'water') {
         candidates.push(tile);

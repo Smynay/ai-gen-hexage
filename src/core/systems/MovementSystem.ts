@@ -1,21 +1,7 @@
-import type { GameState, HexCoord, BuildingInfo } from '../../types';
-import { hexDistance, hexEqual, findPath } from '../hex/HexGrid';
+import type { GameState, BuildingInfo } from '../../types';
+import { hexEqual, findPath } from '../hex/HexGrid';
+import { findClosestPlayerHex, invalidatePlayerHexes } from '../world/WorldQuery';
 import type { GameContext } from '../interfaces';
-
-export function findClosestPlayerHex(state: GameState, from: HexCoord): HexCoord | null {
-  let best: HexCoord | null = null;
-  let bestDist = Infinity;
-  state.grid.forEach((tile) => {
-    if (tile.claimedByPlayer) {
-      const d = hexDistance(from, tile);
-      if (d < bestDist) {
-        bestDist = d;
-        best = tile;
-      }
-    }
-  });
-  return best;
-}
 
 export function tickMovement(state: GameState, ctx: GameContext): void {
   const dt = ctx.config.tickIntervalMs / 1000;
@@ -37,6 +23,7 @@ export function tickMovement(state: GameState, ctx: GameContext): void {
           tile.defenders = [];
           tile.hp = tile.maxHp;
           tile.enemyUnits = [];
+          invalidatePlayerHexes();
         }
       }
       // Re-target
