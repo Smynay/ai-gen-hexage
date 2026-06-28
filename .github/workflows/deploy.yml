@@ -24,9 +24,9 @@ jobs:
         id: vitebase
         run: |
           if [[ "${{ github.ref_name }}" == "dev" ]]; then
-            echo "base=/dev/" >> $GITHUB_OUTPUT
+            echo "base=/ai-gen-hexage/dev/" >> $GITHUB_OUTPUT
           else
-            echo "base=/" >> $GITHUB_OUTPUT
+            echo "base=/ai-gen-hexage/" >> $GITHUB_OUTPUT
           fi
 
       - name: Build
