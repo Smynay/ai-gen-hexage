@@ -1,4 +1,4 @@
-import type { Resources, ResourceType } from './types';
+import type { Resources } from './types';
 
 export const CONFIG = {
   hexSize: 40,
@@ -54,6 +54,19 @@ export const CONFIG = {
   },
 
   tileRegenPerTick: 0.1,
+
+  claimCost: {
+    septims: 5,
+    wood: 3,
+    stone: 0,
+    food: 2,
+    iron: 0,
+  } as Resources,
+
+  settlementHp: 50,
+  defaultTileHp: 20,
+  spawnInitialTimer: 2,
+  adminMaxResources: 9999,
 
   terrainChance: {
     plains: 0.35,

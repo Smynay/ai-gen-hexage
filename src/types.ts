@@ -152,10 +152,45 @@ export type TechState = {
   progress: number;
 };
 
+// ============================================================
+// Hex grid interfaces — абстрагируют honeycomb-grid
+// ============================================================
+
+/** Рантайм-гекс: поля из honeycomb defineHex + наши игровые расширения */
+export interface IHexTile {
+  // Геометрия (из honeycomb defineHex)
+  readonly q: number;
+  readonly r: number;
+  readonly x: number;
+  readonly y: number;
+  readonly corners: readonly { x: number; y: number }[];
+
+  // Игровое состояние
+  terrain: Terrain;
+  claimed: boolean;
+  claimedByPlayer: boolean;
+  revealed: boolean;
+  buildings: BuildingInfo[];
+  buildingSlots: number;
+  defenders: DefenderUnit[];
+  enemyUnits: number[];
+  hp: number;
+  maxHp: number;
+  destroyedBuildings: BuildingType[];
+}
+
+/** Абстракция гексагональной сетки — единственный способ доступа core/ к карте */
+export interface IHexGrid {
+  forEach(callback: (tile: IHexTile) => void): void;
+  getHex(coord: HexCoord): IHexTile | undefined;
+  neighborOf(coord: HexCoord, direction: number): IHexTile | undefined;
+  pointToHex(point: { x: number; y: number }): IHexTile | undefined;
+}
+
 export type GameState = {
   phase: GamePhase;
   currentStage: number;
-  grid: any;
+  grid: IHexGrid;
   resources: Resources;
   wave: WaveState;
   techs: TechState[];

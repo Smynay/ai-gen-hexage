@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { GamePhase } from './types';
 import { gameStore } from './store/gameStore';
+import { adminStore } from './store/adminStore';
 import MainMenu from './ui/MainMenu';
 import StageSelect from './ui/StageSelect';
 import GameCanvas from './ui/GameCanvas';
@@ -16,7 +17,8 @@ const appStyle: React.CSSProperties = {
 };
 
 export default observer(function App() {
-  const { phase, adminMode, openPanel } = gameStore;
+  const { phase, openPanel } = gameStore;
+  const { adminMode } = adminStore;
 
   return (
     <div style={appStyle}>

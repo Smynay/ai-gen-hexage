@@ -1,4 +1,4 @@
-import { Terrain, EnemyType, BuildingType, ResourceType } from '../types';
+import { Terrain, EnemyType, BuildingType } from '../types';
 import type { StageDefinition } from '../types';
 
 export const STAGES: StageDefinition[] = [

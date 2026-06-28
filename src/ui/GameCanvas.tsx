@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
+import { adminStore } from '../store/adminStore';
 import { renderHexGrid } from '../renderer/HexRenderer';
 import { GamePhase } from '../types';
 
@@ -18,7 +19,8 @@ export default observer(function GameCanvas() {
   const lastTickRef = useRef(0);
   const tickAccumRef = useRef(0);
 
-  const { gameLoopTick, phase, adminMode, paintTile, togglePanel } = gameStore;
+  const { gameLoopTick, phase, togglePanel } = gameStore;
+  const { adminMode, paintTerrain, paintTile } = adminStore;
 
   const getHexFromEvent = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -94,10 +96,10 @@ export default observer(function GameCanvas() {
   }, [adminMode, togglePanel]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 2 && adminMode && gameStore.paintTerrain) {
+    if (e.button === 2 && adminMode && paintTerrain) {
       const coord = getHexFromEvent(e.clientX, e.clientY);
       if (coord) {
-        paintTile(coord, gameStore.paintTerrain);
+        paintTile(coord, paintTerrain);
       }
       return;
     }
@@ -141,14 +143,14 @@ export default observer(function GameCanvas() {
   return (
     <div style={{
       ...canvasParentStyle,
-      cursor: adminMode && gameStore.paintTerrain ? 'crosshair' : 'grab',
+      cursor: adminMode && paintTerrain ? 'crosshair' : 'grab',
     }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onWheel={handleWheel}
       onContextMenu={e => {
-        if (adminMode && gameStore.paintTerrain) {
+        if (adminMode && paintTerrain) {
           e.preventDefault();
         }
       }}
