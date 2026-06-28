@@ -13,7 +13,7 @@ import {
   createSandboxState,
   allocEnemyId,
 } from '../core/GameEngine';
-import { hexNeighbors } from '../core/hex/HexGrid';
+import { hexNeighbors, hexEqual } from '../core/hex/HexGrid';
 import { ENEMIES } from '../data/enemies';
 
 const SAVE_KEY = 'hexage_progress';
@@ -100,13 +100,17 @@ class GameStore implements GameState {
   claimSelected() {
     const coord = this.selectedHex;
     if (!coord) return;
-    claimHex(this, coord);
+    if (claimHex(this, coord)) {
+      this.selectedHex = { q: coord.q, r: coord.r };
+    }
   }
 
   buildOnSelected(type: BuildingType) {
     const coord = this.selectedHex;
     if (!coord) return;
-    startBuilding(this, coord, type);
+    if (startBuilding(this, coord, type)) {
+      this.selectedHex = { q: coord.q, r: coord.r };
+    }
   }
 
   research(techId: string) {
@@ -146,6 +150,9 @@ class GameStore implements GameState {
       tile.defenders = [];
       for (const eid of enIds) {
         this.enemies.delete(eid);
+      }
+      if (this.selectedHex && hexEqual(this.selectedHex, coord)) {
+        this.selectedHex = { q: coord.q, r: coord.r };
       }
     }
   }
@@ -221,6 +228,9 @@ class GameStore implements GameState {
     const tile = this.grid.getHex(coord);
     if (tile) {
       tile.buildingSlots = Math.max(1, Math.min(10, slots));
+      if (this.selectedHex && hexEqual(this.selectedHex, coord)) {
+        this.selectedHex = { q: coord.q, r: coord.r };
+      }
     }
   }
 
@@ -234,6 +244,9 @@ class GameStore implements GameState {
       tile.hp = tile.maxHp;
       for (const nb of hexNeighbors(this.grid, coord)) {
         nb.revealed = true;
+      }
+      if (this.selectedHex && hexEqual(this.selectedHex, coord)) {
+        this.selectedHex = { q: coord.q, r: coord.r };
       }
     }
   }
