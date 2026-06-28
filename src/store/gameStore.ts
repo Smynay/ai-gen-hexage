@@ -1,5 +1,5 @@
 import { makeAutoObservable, observable } from 'mobx';
-import type { GameState, HexCoord, Resources, EnemyType, EnemyUnit, Terrain, WaveDefinition } from '../types';
+import type { GameState, HexCoord, Resources, EnemyType, EnemyUnit, Terrain, WaveDefinition, IHexGrid } from '../types';
 import { GamePhase, BuildingType } from '../types';
 import {
   createInitialState,
@@ -16,6 +16,7 @@ import {
 } from '../core/GameEngine';
 import { hexNeighbors, hexEqual } from '../core/hex/HexGrid';
 import { ENEMIES } from '../data/enemies';
+import { CONFIG } from '../config';
 
 const SAVE_KEY = 'hexage_progress';
 
@@ -39,7 +40,7 @@ function saveProgress(stageIndex: number) {
 class GameStore implements GameState {
   phase: GamePhase = GamePhase.Menu;
   currentStage = 0;
-  grid: any = null;
+  grid: IHexGrid = null!;
   resources: Resources = { septims: 0, wood: 0, stone: 0, food: 0, iron: 0 };
   wave = { current: 0, total: 0, timer: 30, active: false, spawning: false, spawnTimer: 0, spawnQueue: [] as { type: EnemyType; hex: HexCoord; interval: number }[] };
   techs: { id: string; researched: boolean; inProgress: boolean; progress: number }[] = [];
@@ -193,11 +194,12 @@ class GameStore implements GameState {
   }
 
   maxResources() {
-    this.resources.septims = 9999;
-    this.resources.wood = 9999;
-    this.resources.stone = 9999;
-    this.resources.food = 9999;
-    this.resources.iron = 9999;
+    const max = CONFIG.adminMaxResources;
+    this.resources.septims = max;
+    this.resources.wood = max;
+    this.resources.stone = max;
+    this.resources.food = max;
+    this.resources.iron = max;
   }
 
   triggerNextWave() {

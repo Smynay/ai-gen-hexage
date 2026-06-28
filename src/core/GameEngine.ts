@@ -3,6 +3,7 @@ import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal, Buildin
 import { GamePhase, BuildingType, EnemyType, ResourceType, Terrain } from '../types';
 import { hexNeighbors, hexDistance, hexEqual, hexesInRadius, findPath } from './hex/HexGrid';
 import { Tile } from './hex/Tile';
+import { createHexGridAdapter } from './hex/HexGridAdapter';
 import { BUILDINGS } from '../data/buildings';
 import { ENEMIES } from '../data/enemies';
 import { TECHS } from '../data/techs';
@@ -35,12 +36,12 @@ function createGameState(config: GameConfig): GameState {
   const { stageIndex, mapRadius, playerStart, terrains, initialResources, waves, waveTimer, unlockedTechs, adminMode } = config;
 
   const coords = hexesInRadius({ q: 0, r: 0 }, mapRadius);
-  const grid = new Grid(Tile, coords);
+  const rawGrid = new Grid(Tile, coords) as unknown as Grid<Tile>;
 
   const slotsMin = CONFIG.buildingSlots.min;
   const slotsMax = CONFIG.buildingSlots.max;
 
-  (grid as any).forEach((tile: any) => {
+  rawGrid.forEach((tile) => {
     const isPlayerStart = tile.q === playerStart.q && tile.r === playerStart.r;
     const terrainIndex = Math.abs(tile.q * 7 + tile.r * 13) % terrains.length;
     tile.terrain = terrains[terrainIndex];
@@ -51,18 +52,20 @@ function createGameState(config: GameConfig): GameState {
       ? CONFIG.buildingSlots.mainHex
       : slotsMin + Math.floor(Math.abs(tile.q * 17 + tile.r * 31) % (slotsMax - slotsMin + 1));
     tile.buildings = isPlayerStart
-      ? [{ type: BuildingType.Settlement, level: 1, hp: 50, maxHp: 50, progress: 1 }]
+      ? [{ type: BuildingType.Settlement, level: 1, hp: CONFIG.settlementHp, maxHp: CONFIG.settlementHp, progress: 1 }]
       : [];
     tile.defenders = [];
     tile.enemyUnits = [];
-    tile.hp = 20;
-    tile.maxHp = 20;
+    tile.hp = CONFIG.defaultTileHp;
+    tile.maxHp = CONFIG.defaultTileHp;
   });
+
+  const grid = createHexGridAdapter(rawGrid);
 
   // Reveal start hex neighbours — shared across all levels
   const startTile = grid.getHex(playerStart);
   if (startTile) {
-    for (const nb of hexNeighbors(grid as any, startTile)) {
+    for (const nb of hexNeighbors(grid, startTile)) {
       nb.revealed = true;
     }
   }
@@ -135,11 +138,13 @@ export function createSandboxState(): GameState {
 }
 
 export function getClaimCost() {
-  return { septims: 5, wood: 3, food: 2 };
+  return { ...CONFIG.claimCost };
 }
 
 export function canClaim(state: GameState): boolean {
-  return state.resources.septims >= 5 && state.resources.wood >= 3 && state.resources.food >= 2;
+  return state.resources.septims >= CONFIG.claimCost.septims &&
+    state.resources.wood >= CONFIG.claimCost.wood &&
+    state.resources.food >= CONFIG.claimCost.food;
 }
 
 export function canBuild(state: GameState, coord: HexCoord, buildingType: BuildingType): boolean {
@@ -182,9 +187,9 @@ export function claimHex(state: GameState, coord: HexCoord): boolean {
   const tile = state.grid.getHex(coord);
   if (!tile || tile.claimed || tile.terrain === 'water') return false;
   if (!canClaim(state)) return false;
-  state.resources.septims -= 5;
-  state.resources.wood -= 3;
-  state.resources.food -= 2;
+  state.resources.septims -= CONFIG.claimCost.septims;
+  state.resources.wood -= CONFIG.claimCost.wood;
+  state.resources.food -= CONFIG.claimCost.food;
   tile.claimed = true;
   tile.claimedByPlayer = true;
   tile.revealed = true;
@@ -281,7 +286,7 @@ export function startResearch(state: GameState, techId: string): boolean {
 
 function getSpawnHexes(state: GameState): HexCoord[] {
   const candidates: HexCoord[] = [];
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     if (!tile.claimed && tile.terrain !== 'water') {
       for (const nb of hexNeighbors(state.grid, tile)) {
         if (nb.claimedByPlayer) {
@@ -292,7 +297,7 @@ function getSpawnHexes(state: GameState): HexCoord[] {
     }
   });
   if (candidates.length === 0) {
-    (state.grid as any).forEach((tile: any) => {
+    state.grid.forEach((tile) => {
       if (!tile.claimed && tile.terrain !== 'water') {
         candidates.push(tile);
       }
@@ -304,7 +309,7 @@ function getSpawnHexes(state: GameState): HexCoord[] {
 function findClosestPlayerHex(state: GameState, from: HexCoord): HexCoord | null {
   let best: HexCoord | null = null;
   let bestDist = Infinity;
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     if (tile.claimedByPlayer) {
       const d = hexDistance(from, tile);
       if (d < bestDist) {
@@ -328,7 +333,7 @@ export function gameTick(state: GameState): void {
   const waves = state.adminWaves ?? stage.waves;
 
   // 1. Resource generation
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     if (!tile.claimedByPlayer) return;
     for (const b of tile.buildings) {
       if (b.progress < 1) continue;
@@ -340,7 +345,7 @@ export function gameTick(state: GameState): void {
   });
 
   // 2. Building progress
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     for (const b of tile.buildings) {
       if (b.progress >= 1) continue;
       b.progress += TICK_TIME / BUILDINGS[b.type as BuildingType].buildTime;
@@ -440,7 +445,7 @@ export function gameTick(state: GameState): void {
   }
 
   // 7. Defense damage
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     if (!tile.claimedByPlayer || tile.enemyUnits.length === 0) return;
     let defenseDmg = 0;
     for (const b of tile.buildings) {
@@ -483,7 +488,7 @@ export function gameTick(state: GameState): void {
   }
 
   // 9. Tile HP regen
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     if (tile.claimedByPlayer && tile.hp < tile.maxHp && tile.enemyUnits.length === 0) {
       tile.hp = Math.min(tile.maxHp, tile.hp + CONFIG.tileRegenPerTick);
     }
@@ -521,7 +526,7 @@ function spawnEnemyWave(state: GameState, waveDef: WaveDefinition): void {
     }
   }
   state.wave.spawning = true;
-  state.wave.spawnTimer = 2;
+  state.wave.spawnTimer = CONFIG.spawnInitialTimer;
   state.wave.spawnQueue = queue;
 }
 
@@ -532,7 +537,7 @@ function checkGoals(state: GameState, goals: StageGoal[]): void {
     }
     if (goal.type === 'claim_hexes') {
       let count = 0;
-      (state.grid as any).forEach((tile: any) => { if (tile.claimedByPlayer) count++; });
+      state.grid.forEach((tile) => { if (tile.claimedByPlayer) count++; });
       return count >= goal.target;
     }
     if (goal.type === 'defeat_boss') {
@@ -550,7 +555,7 @@ function checkGoals(state: GameState, goals: StageGoal[]): void {
   }
 
   let playerHexes = 0;
-  (state.grid as any).forEach((tile: any) => { if (tile.claimedByPlayer) playerHexes++; });
+  state.grid.forEach((tile) => { if (tile.claimedByPlayer) playerHexes++; });
   if (playerHexes === 0) {
     state.phase = GamePhase.Defeat;
     state.stageResult = 'defeat';

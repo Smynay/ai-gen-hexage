@@ -1,4 +1,4 @@
-import type { GameState } from '../types';
+import type { GameState, IHexTile } from '../types';
 import { GamePhase, BuildingType, Terrain } from '../types';
 import { CONFIG } from '../config';
 
@@ -76,11 +76,11 @@ export function renderHexGrid(
   ctx.fillStyle = '#0a0a14';
   ctx.fillRect(0, 0, width, height);
 
-  const tiles: { tile: any; px: number; py: number }[] = [];
-  const claimedTiles: { tile: any; px: number; py: number }[] = [];
+  const tiles: { tile: IHexTile; px: number; py: number }[] = [];
+  const claimedTiles: { tile: IHexTile; px: number; py: number }[] = [];
   const claimedSet = new Set<string>();
 
-  (state.grid as any).forEach((tile: any) => {
+  state.grid.forEach((tile) => {
     if (tile.claimedByPlayer) claimedSet.add(`${tile.q},${tile.r}`);
     if (!tile.revealed) return;
     const px = tile.x * zoom + cx;
@@ -199,21 +199,21 @@ export function renderHexGrid(
 
 function drawHexTile(
   ctx: CanvasRenderingContext2D,
-  tile: any,
+  tile: IHexTile,
   px: number,
   py: number,
   zoom: number,
   state: GameState,
 ): void {
   const elev = terrainElevation(tile.terrain) * zoom;
-  const corners = tile.corners.map((c: any) => ({
+  const corners = tile.corners.map((c) => ({
     x: c.x * zoom + (px - tile.x * zoom),
     y: c.y * zoom + (py - tile.y * zoom),
   }));
 
   // Bottom face (isometric depth)
   if (elev > 0) {
-    const bottomCorners = corners.map((c: any) => ({ x: c.x, y: c.y + elev }));
+    const bottomCorners = corners.map((c) => ({ x: c.x, y: c.y + elev }));
     ctx.beginPath();
     ctx.moveTo(corners[0].x, corners[0].y + elev);
     for (let i = 0; i < 6; i++) {
@@ -251,7 +251,7 @@ function drawHexTile(
     const variant = gridVariant(tile.q, tile.r);
     const grid = GRIDS[variant];
     const sorted = [...tile.buildings].sort((a, b) => (b.progress < 1 ? 1 : 0) - (a.progress < 1 ? 1 : 0));
-    sorted.forEach((b: any, i: number) => {
+    sorted.forEach((b, i: number) => {
       const offsets = grid[Math.min(sorted.length, 5) - 1] ?? grid[0];
       const [ox, oy] = offsets[i % offsets.length];
       const bx = px + ox * zoom;
@@ -302,7 +302,7 @@ function drawHexTile(
     const variant = gridVariant(tile.q, tile.r);
     const grid = GRIDS[variant];
     const size = 40 * zoom;
-    tile.buildings.forEach((b: any, i: number) => {
+    tile.buildings.forEach((b, i: number) => {
       if (b.progress >= 1) return;
       const offsets = grid[Math.min(tile.buildings.length, 5) - 1] ?? grid[0];
       const [ox, oy] = offsets[i % offsets.length];

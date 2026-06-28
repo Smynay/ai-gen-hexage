@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
 import { EnemyType, Terrain } from '../types';
-import { ENEMIES } from '../data/enemies';
 
 const ALL_TERRAIN: Terrain[] = ['plains', 'forest', 'mountain', 'water', 'snow', 'tundra'];
 const ALL_ENEMIES = Object.values(EnemyType);
@@ -58,7 +57,7 @@ export default observer(function AdminPanel() {
 
   const {
     resources, selectedHex, paintTerrain, adminWaves, wave, grid,
-    setResource, maxResources, setPaintTerrain, paintTile,
+    setResource, maxResources, setPaintTerrain,
     triggerNextWave, spawnEnemyOnCoord,
     updateAdminWaveEnemy, addAdminWave, removeAdminWave,
     toggleClaimed, setAdminBuildingSlots,
