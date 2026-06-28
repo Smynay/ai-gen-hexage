@@ -12,6 +12,7 @@ import {
   resetEnemyId,
 } from '../core/GameEngine';
 import { createInitialState } from '../boot/createGame';
+import { invalidatePlayerHexes } from '../core/world/WorldQuery';
 import { progressStore } from './progressStore';
 
 class GameStore implements GameState {
@@ -38,6 +39,7 @@ class GameStore implements GameState {
   }
 
   startStage(index: number) {
+    invalidatePlayerHexes();
     resetEnemyId();
     Object.assign(this, createInitialState(index));
     this.phase = GamePhase.Playing;

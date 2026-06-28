@@ -2,6 +2,7 @@ import { makeAutoObservable } from 'mobx';
 import type { EnemyType, HexCoord, Terrain, WaveDefinition } from '../types';
 import { GamePhase } from '../types';
 import { gameStore } from './gameStore';
+import { invalidatePlayerHexes } from '../core/world/WorldQuery';
 import { resetEnemyId, allocEnemyId } from '../core/GameEngine';
 import { createSandboxState } from '../boot/createGame';
 import { hexNeighbors, hexEqual } from '../core/hex/HexGrid';
@@ -18,6 +19,7 @@ class AdminStore {
   }
 
   startTestLevel() {
+    invalidatePlayerHexes();
     resetEnemyId();
     Object.assign(gameStore, createSandboxState());
     this.adminMode = true;
