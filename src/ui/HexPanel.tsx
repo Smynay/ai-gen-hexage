@@ -28,16 +28,15 @@ const claimBtnStyle: React.CSSProperties = {
   fontFamily: 'monospace', fontWeight: 'bold',
 };
 
-function buildBtnStyle(state: 'full' | 'locked' | 'noterrain'): React.CSSProperties {
-  const opacity = state === 'full' ? 1 : state === 'locked' ? 0.5 : 0.25;
+function buildBtnStyle(active: boolean): React.CSSProperties {
   return {
     padding: '8px 14px', fontSize: '0.9rem',
-    background: state === 'full' ? '#1a1528' : '#0a0a14',
-    color: state === 'full' ? '#eae0d0' : '#3a3040',
+    background: active ? '#1a1528' : '#0a0a14',
+    color: active ? '#eae0d0' : '#3a3040',
     border: '1px solid',
-    borderColor: state === 'full' ? '#3a2a50' : '#1a1528',
-    cursor: state === 'full' ? 'pointer' : 'not-allowed',
-    opacity,
+    borderColor: active ? '#3a2a50' : '#1a1528',
+    cursor: active ? 'pointer' : 'not-allowed',
+    opacity: active ? 1 : 0.8,
     fontFamily: 'monospace', textAlign: 'left' as const,
     display: 'flex', flexDirection: 'column' as const,
     gap: 3,
@@ -128,16 +127,13 @@ export default observer(function HexPanel() {
             {unlockedBuildings.map((bt: BuildingType) => {
               const def = BUILDINGS[bt];
               const terrainOk = def.allowedTerrain?.includes(tile.terrain) ?? true;
-              const affordable = terrainOk && canAfford(resources, def);
-              let state: 'full' | 'locked' | 'noterrain';
-              if (terrainOk && affordable) state = 'full';
-              else if (terrainOk && !affordable) state = 'locked';
-              else state = 'noterrain';
+              if (!terrainOk) return null;
+              const affordable = canAfford(resources, def);
               return (
                 <button
                   key={bt}
-                  style={buildBtnStyle(state)}
-                  onClick={() => state === 'full' && buildOnSelected(bt)}
+                  style={buildBtnStyle(affordable)}
+                  onClick={() => affordable && buildOnSelected(bt)}
                   title={`${def.name}: ${def.description}`}
                 >
                   <span style={{ fontWeight: 'bold' }}>{def.name}</span>
