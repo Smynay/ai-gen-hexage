@@ -14,7 +14,7 @@ class AdminStore {
   paintTerrain: Terrain | null = null;
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {}, { autoBind: true });
   }
 
   startTestLevel() {

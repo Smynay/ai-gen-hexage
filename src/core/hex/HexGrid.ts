@@ -14,8 +14,9 @@ export function hexKey(q: number, r: number): string {
   return `${q},${r}`;
 }
 
-// Pointy-top hex directions (NE, E, SE, SW, W, NW)
-const POINTY_DIRS = [0, 1, 2, 3, 4, 5] as const;
+// Pointy-top hex directions matching honeycomb-grid Direction enum:
+// NE=1, E=2, SE=3, SW=5, W=6, NW=7
+const POINTY_DIRS = [1, 2, 3, 5, 6, 7] as const;
 
 export function hexNeighbors(grid: IHexGrid, coord: HexCoord): IHexTile[] {
   const result: IHexTile[] = [];
