@@ -5,6 +5,7 @@ import {
   createInitialState,
   gameTick,
   claimHex,
+  reclaimHex,
   startBuilding,
   canBuild,
   canResearch,
@@ -109,6 +110,16 @@ class GameStore implements GameState {
     const coord = this.selectedHex;
     if (!coord) return;
     if (startBuilding(this, coord, type)) {
+      this.selectedHex = { q: coord.q, r: coord.r };
+    }
+  }
+
+  reclaimSelected(buildings?: BuildingType[]) {
+    const coord = this.selectedHex;
+    if (!coord) return;
+    const tile = this.grid.getHex(coord);
+    const selected = buildings ?? tile?.destroyedBuildings ?? [];
+    if (reclaimHex(this, coord, selected)) {
       this.selectedHex = { q: coord.q, r: coord.r };
     }
   }

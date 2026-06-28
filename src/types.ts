@@ -87,6 +87,7 @@ export type HexTile = {
   hp: number;
   maxHp: number;
   revealed: boolean;
+  destroyedBuildings: BuildingType[];
 };
 
 export type WaveDefinition = {

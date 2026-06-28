@@ -5,6 +5,7 @@ type BuildingDef = {
   type: BuildingType;
   name: string;
   cost: Resources;
+  reclaimCost: Resources;
   buildTime: number;
   hp: number;
   produces: Partial<Record<ResourceType, number>>;
@@ -32,6 +33,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Settlement,
     name: 'Поселение',
     cost: { ...zero, septims: 5, wood: 3, stone: 2 },
+    reclaimCost: { ...zero, septims: 3, wood: 1, stone: 1 },
     buildTime: 10,
     hp: 50,
     produces: { septims: 1, food: 1 },
@@ -51,6 +53,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.LumberMill,
     name: 'Лесопилка',
     cost: { ...zero, septims: 8, wood: 2 },
+    reclaimCost: { ...zero, septims: 4, wood: 1 },
     buildTime: 8,
     hp: 20,
     produces: { wood: 2 },
@@ -70,6 +73,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Quarry,
     name: 'Каменоломня',
     cost: { ...zero, septims: 10, wood: 3, stone: 1 },
+    reclaimCost: { ...zero, septims: 5, wood: 1, stone: 1 },
     buildTime: 10,
     hp: 25,
     produces: { stone: 2 },
@@ -89,6 +93,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Mine,
     name: 'Шахта',
     cost: { ...zero, septims: 12, wood: 4, stone: 2 },
+    reclaimCost: { ...zero, septims: 6, wood: 2, stone: 1 },
     buildTime: 12,
     hp: 20,
     produces: { septims: 3, iron: 0.5 },
@@ -108,6 +113,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Farm,
     name: 'Ферма',
     cost: { ...zero, septims: 6, wood: 2 },
+    reclaimCost: { ...zero, septims: 3, wood: 1 },
     buildTime: 6,
     hp: 15,
     produces: { food: 3 },
@@ -127,6 +133,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Barracks,
     name: 'Казарма',
     cost: { ...zero, septims: 15, wood: 5, stone: 3, iron: 2 },
+    reclaimCost: { ...zero, septims: 8, wood: 2, stone: 1, iron: 1 },
     buildTime: 15,
     hp: 30,
     produces: {},
@@ -146,6 +153,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Watchtower,
     name: 'Сторожевая башня',
     cost: { ...zero, septims: 12, stone: 5, wood: 2 },
+    reclaimCost: { ...zero, septims: 6, stone: 2, wood: 1 },
     buildTime: 10,
     hp: 25,
     produces: {},
@@ -165,6 +173,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Wall,
     name: 'Стена',
     cost: { ...zero, septims: 5, stone: 4 },
+    reclaimCost: { ...zero, septims: 3, stone: 2 },
     buildTime: 8,
     hp: 40,
     produces: {},
@@ -184,6 +193,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Shrine,
     name: 'Святилище',
     cost: { ...zero, septims: 20, stone: 5, iron: 3, food: 5 },
+    reclaimCost: { ...zero, septims: 10, stone: 3, iron: 2, food: 2 },
     buildTime: 20,
     hp: 30,
     produces: { septims: 2 },
@@ -203,6 +213,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     type: BuildingType.Smithy,
     name: 'Кузница',
     cost: { ...zero, septims: 15, stone: 3, iron: 3 },
+    reclaimCost: { ...zero, septims: 8, stone: 2, iron: 2 },
     buildTime: 12,
     hp: 20,
     produces: {},

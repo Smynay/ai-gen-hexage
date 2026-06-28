@@ -194,6 +194,57 @@ export function claimHex(state: GameState, coord: HexCoord): boolean {
   return true;
 }
 
+export function getReclaimCost(buildings: BuildingType[]): Resources {
+  const cost = { ...getClaimCost(), stone: 0, iron: 0 };
+  for (const bt of buildings) {
+    const rc = BUILDINGS[bt]?.reclaimCost ?? { septims: 0, wood: 0, stone: 0, food: 0, iron: 0 };
+    cost.septims += rc.septims;
+    cost.wood += rc.wood;
+    cost.stone += rc.stone;
+    cost.food += rc.food;
+    cost.iron += rc.iron;
+  }
+  return cost;
+}
+
+export function canReclaim(state: GameState, coord: HexCoord, selected: BuildingType[]): boolean {
+  const tile = state.grid.getHex(coord);
+  if (!tile || !tile.claimed || tile.claimedByPlayer || tile.terrain === 'water') return false;
+  const cost = getReclaimCost(selected);
+  const r = state.resources;
+  return (
+    r.septims >= cost.septims &&
+    r.wood >= cost.wood &&
+    r.stone >= cost.stone &&
+    r.food >= cost.food &&
+    r.iron >= cost.iron
+  );
+}
+
+export function reclaimHex(state: GameState, coord: HexCoord, selected: BuildingType[]): boolean {
+  if (!canReclaim(state, coord, selected)) return false;
+  const tile = state.grid.getHex(coord)!;
+  const cost = getReclaimCost(selected);
+  state.resources.septims -= cost.septims;
+  state.resources.wood -= cost.wood;
+  state.resources.stone -= cost.stone;
+  state.resources.food -= cost.food;
+  state.resources.iron -= cost.iron;
+  tile.claimedByPlayer = true;
+  tile.destroyedBuildings = [];
+  for (const bt of selected) {
+    const def = BUILDINGS[bt];
+    tile.buildings.push({
+      type: bt,
+      level: 1,
+      hp: def.hp,
+      maxHp: def.hp,
+      progress: 0,
+    });
+  }
+  return true;
+}
+
 export function canResearch(state: GameState, techId: string): boolean {
   const ts = state.techs.find(t => t.id === techId);
   if (!ts || ts.researched || ts.inProgress) return false;
@@ -360,7 +411,8 @@ export function gameTick(state: GameState): void {
         const dmg = enemy.damage * TICK_TIME;
         tile.hp -= dmg;
         if (tile.hp <= 0 && tile.claimedByPlayer) {
-          tile.claimed = false;
+          tile.destroyedBuildings = tile.buildings.map((b: BuildingInfo) => b.type);
+          tile.claimed = true;
           tile.claimedByPlayer = false;
           tile.buildings = [];
           tile.defenders = [];

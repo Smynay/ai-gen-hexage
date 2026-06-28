@@ -4,6 +4,7 @@ import { BuildingType } from '../types';
 import { BUILDINGS } from '../data/buildings';
 import { STAGES } from '../data/stages';
 import { CONFIG } from '../config';
+import { getReclaimCost } from '../core/GameEngine';
 
 const panelStyle: React.CSSProperties = {
   position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -68,7 +69,7 @@ function canAfford(resources: any, def: any): boolean {
 
 export default observer(function HexPanel() {
   const {
-    selectedHex, claimSelected, buildOnSelected,
+    selectedHex, claimSelected, buildOnSelected, reclaimSelected,
     currentStage, grid, resources, adminMode, openPanel, togglePanel,
   } = gameStore;
 
@@ -91,9 +92,9 @@ export default observer(function HexPanel() {
         <div style={sectionTitle}>Гекс ({tile.q}, {tile.r})</div>
         <div style={{ fontSize: '0.9rem' }}>
           <div>Тип: <span style={{ color: '#7a7080' }}>{tile.terrain}</span></div>
-          <div>Статус: <span style={{ color: tile.claimedByPlayer ? '#8ab87a' : '#5a4050' }}>
-            {tile.claimedByPlayer ? 'Ваш' : tile.claimed ? 'Занят' : 'Свободен'}
-          </span></div>
+          <div>Статус: <span style={{ color: tile.claimedByPlayer ? '#8ab87a' : tile.claimed ? '#c04040' : '#5a4050' }}>
+              {tile.claimedByPlayer ? 'Ваш' : tile.claimed ? 'Вражеский' : 'Свободен'}
+            </span></div>
           {tile.claimedByPlayer && hasSlots && (
             <div>
               Постройки: <span style={{ color: '#d4a050' }}>{buildingCount}/{slots}</span>
@@ -155,6 +156,30 @@ export default observer(function HexPanel() {
         <button style={claimBtnStyle} onClick={claimSelected}>
           ▸ ЗАХВАТИТЬ (5G, 3W, 2F)
         </button>
+      )}
+
+      {!tile.claimedByPlayer && tile.claimed && (
+        <div>
+          <div style={sectionTitle}>Вражеский гекс</div>
+          {tile.destroyedBuildings && tile.destroyedBuildings.length > 0 && (
+            <div style={{ fontSize: '0.85rem', color: '#7a7080', marginBottom: 8 }}>
+              Разрушено: {tile.destroyedBuildings.map((bt: BuildingType) => BUILDINGS[bt]?.name ?? bt).join(', ')}
+            </div>
+          )}
+          <button style={{ ...claimBtnStyle, background: '#4a2a2a', color: '#c08080', borderColor: '#6a3a3a' }}
+            onClick={() => reclaimSelected()}>
+            ▸ ВОССТАНОВИТЬ ({(() => {
+              const c = getReclaimCost(tile.destroyedBuildings ?? []);
+              const parts = [];
+              if (c.septims) parts.push(`${c.septims}G`);
+              if (c.wood) parts.push(`${c.wood}W`);
+              if (c.stone) parts.push(`${c.stone}S`);
+              if (c.food) parts.push(`${c.food}F`);
+              if (c.iron) parts.push(`${c.iron}I`);
+              return parts.join(', ');
+            })()})
+          </button>
+        </div>
       )}
     </>
   );

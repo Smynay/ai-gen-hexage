@@ -1,5 +1,5 @@
 import { defineHex, Orientation } from 'honeycomb-grid';
-import type { Terrain, BuildingInfo } from '../../types';
+import type { Terrain, BuildingInfo, BuildingType } from '../../types';
 
 export class Tile extends defineHex({ dimensions: 40, orientation: Orientation.POINTY }) {
   terrain!: Terrain;
@@ -12,4 +12,5 @@ export class Tile extends defineHex({ dimensions: 40, orientation: Orientation.P
   hp = 20;
   maxHp = 20;
   revealed = false;
+  destroyedBuildings: BuildingType[] = [];
 }
