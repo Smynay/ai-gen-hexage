@@ -1,4 +1,6 @@
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
+import type { HexCoord } from '../types';
 import { BuildingType } from '../types';
 import { BUILDINGS } from '../data/buildings';
 import { STAGES } from '../data/stages';
@@ -66,19 +68,12 @@ function canAfford(resources: any, def: any): boolean {
   );
 }
 
-export default function HexPanel() {
-  const selectedHex = useGameStore(s => s.selectedHex);
-  const claimSelected = useGameStore(s => s.claimSelected);
-  const buildOnSelected = useGameStore(s => s.buildOnSelected);
-  const selectHex = useGameStore(s => s.selectHex);
-  const canClaimAny = useGameStore(s => s.canClaimAny);
-  const unclaimedNeighbors = useGameStore(s => s.unclaimedNeighbors);
-  const currentStage = useGameStore(s => s.currentStage);
-  const grid = useGameStore(s => s.grid);
-  const resources = useGameStore(s => s.resources);
-  const adminMode = useGameStore(s => s.adminMode);
-  const openPanel = useGameStore(s => s.openPanel);
-  const togglePanel = useGameStore(s => s.togglePanel);
+export default observer(function HexPanel() {
+  const {
+    selectedHex, claimSelected, buildOnSelected, selectHex,
+    canClaimAny, unclaimedNeighbors, currentStage, grid,
+    resources, adminMode, openPanel, togglePanel,
+  } = gameStore;
 
   const stageDef = STAGES[currentStage];
   const unlockedBuildings = stageDef?.unlockedBuildings ?? Object.values(BuildingType) as BuildingType[];
@@ -95,7 +90,7 @@ export default function HexPanel() {
       <div>
         <div style={sectionTitle}>Доступные для захвата</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {neighbors.slice(0, 8).map((c, i) => (
+          {neighbors.slice(0, 8).map((c: HexCoord, i: number) => (
             <button key={i} style={claimBtnStyle} onClick={() => selectHex(c)}>
               {c.q},{c.r}
             </button>
@@ -210,4 +205,4 @@ export default function HexPanel() {
       </div>
     </div>
   );
-}
+});

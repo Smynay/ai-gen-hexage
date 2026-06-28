@@ -1,4 +1,5 @@
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 
 const overlayStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -9,12 +10,8 @@ const overlayStyle: React.CSSProperties = {
   zIndex: 200,
 };
 
-export default function GameOverScreen() {
-  const stageResult = useGameStore(s => s.stageResult);
-  const goToMenu = useGameStore(s => s.goToMenu);
-  const goToStageSelect = useGameStore(s => s.goToStageSelect);
-  const currentStage = useGameStore(s => s.currentStage);
-  const startStage = useGameStore(s => s.startStage);
+export default observer(function GameOverScreen() {
+  const { stageResult, goToMenu, goToStageSelect, currentStage, startStage } = gameStore;
 
   const victory = stageResult === 'victory';
 
@@ -83,4 +80,4 @@ export default function GameOverScreen() {
       </div>
     </div>
   );
-}
+});

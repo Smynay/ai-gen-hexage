@@ -1,6 +1,6 @@
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 import { STAGES } from '../data/stages';
-import { GamePhase } from '../types';
 
 const containerStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -39,16 +39,8 @@ const backBtnStyle: React.CSSProperties = {
   fontFamily: 'monospace', fontSize: '1rem',
 };
 
-const waveDot = (active: boolean): React.CSSProperties => ({
-  display: 'inline-block', width: 8, height: 8,
-  borderRadius: '50%', background: active ? '#c04040' : '#2a1a20',
-  marginRight: 3,
-});
-
-export default function StageSelect() {
-  const startStage = useGameStore(s => s.startStage);
-  const goToMenu = useGameStore(s => s.goToMenu);
-  const completedStages = useGameStore(s => s.completedStages) ?? [1];
+export default observer(function StageSelect() {
+  const { startStage, goToMenu, completedStages } = gameStore;
 
   const isUnlocked = (id: number) => completedStages.includes(id) || id === 1;
 
@@ -98,4 +90,4 @@ export default function StageSelect() {
       </button>
     </div>
   );
-}
+});

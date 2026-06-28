@@ -1,4 +1,5 @@
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 import { TECHS } from '../data/techs';
 
 const panelStyle: React.CSSProperties = {
@@ -25,10 +26,8 @@ const techBtnStyle = (active: boolean): React.CSSProperties => ({
   fontFamily: 'monospace', textAlign: 'left' as const,
 });
 
-export default function TechPanel() {
-  const techs = useGameStore(s => s.techs);
-  const research = useGameStore(s => s.research);
-  const canResearchTech = useGameStore(s => s.canResearchTech);
+export default observer(function TechPanel() {
+  const { techs, research, canResearchTech } = gameStore;
 
   if (!techs || techs.length === 0) return null;
 
@@ -63,4 +62,4 @@ export default function TechPanel() {
       })}
     </div>
   );
-}
+});

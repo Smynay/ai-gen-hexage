@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 import { EnemyType, Terrain } from '../types';
 import { ENEMIES } from '../data/enemies';
 
@@ -52,27 +53,16 @@ const enemyColors: Record<string, string> = {
   dragon_priest: '#c040c0', dragon: '#c04040',
 };
 
-export default function AdminPanel() {
+export default observer(function AdminPanel() {
   const [tab, setTab] = useState<'resources' | 'terrain' | 'waves' | 'spawn'>('resources');
 
-  const resources = useGameStore(s => s.resources);
-  const selectedHex = useGameStore(s => s.selectedHex);
-  const paintTerrain = useGameStore(s => s.paintTerrain);
-  const adminWaves = useGameStore(s => s.adminWaves);
-  const waveState = useGameStore(s => s.wave);
-  const grid = useGameStore(s => s.grid);
-
-  const setResource = useGameStore(s => s.setResource);
-  const maxResources = useGameStore(s => s.maxResources);
-  const setPaintTerrain = useGameStore(s => s.setPaintTerrain);
-  const paintTile = useGameStore(s => s.paintTile);
-  const triggerNextWave = useGameStore(s => s.triggerNextWave);
-  const spawnEnemyOnCoord = useGameStore(s => s.spawnEnemyOnCoord);
-  const updateAdminWaveEnemy = useGameStore(s => s.updateAdminWaveEnemy);
-  const addAdminWave = useGameStore(s => s.addAdminWave);
-  const removeAdminWave = useGameStore(s => s.removeAdminWave);
-  const toggleClaimed = useGameStore(s => s.toggleClaimed);
-  const setAdminBuildingSlots = useGameStore(s => s.setAdminBuildingSlots);
+  const {
+    resources, selectedHex, paintTerrain, adminWaves, wave, grid,
+    setResource, maxResources, setPaintTerrain, paintTile,
+    triggerNextWave, spawnEnemyOnCoord,
+    updateAdminWaveEnemy, addAdminWave, removeAdminWave,
+    toggleClaimed, setAdminBuildingSlots,
+  } = gameStore;
 
   const [waveAddType, setWaveAddType] = useState<EnemyType>(EnemyType.Draugr);
   const [waveAddCount, setWaveAddCount] = useState(3);
@@ -194,28 +184,28 @@ export default function AdminPanel() {
 
         {tab === 'waves' && (
           <div>
-            <div style={sectionLabel}>Волны ({waveState.current + 1}/{waveState.total})</div>
-            {!waveState.active && !waveState.spawning && (
+            <div style={sectionLabel}>Волны ({wave.current + 1}/{wave.total})</div>
+            {!wave.active && !wave.spawning && (
               <div style={{ color: '#40a0ff', fontSize: '0.8rem', marginBottom: 8 }}>
-                До волны: {Math.ceil(waveState.timer)}с
+                До волны: {Math.ceil(wave.timer)}с
               </div>
             )}
-            {(waveState.spawning || waveState.active) && (
+            {(wave.spawning || wave.active) && (
               <div style={{ color: '#c04040', fontSize: '0.8rem', marginBottom: 8 }}>
-                {waveState.spawnQueue.length} в очереди
+                {wave.spawnQueue.length} в очереди
               </div>
             )}
             <button style={{ ...smallBtn, marginBottom: 8 }} onClick={triggerNextWave}>
               ВЫЗВАТЬ ВОЛНУ СЕЙЧАС
             </button>
 
-            {adminWaves && adminWaves.map((wave, wi) => (
+            {adminWaves && adminWaves.map((wdef, wi) => (
               <div key={wi} style={{
                 border: '1px solid #1e1a2e', padding: 8, marginBottom: 6,
-                background: wi === waveState.current ? '#1a1528' : undefined,
+                background: wi === wave.current ? '#1a1528' : undefined,
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ color: wi === waveState.current ? '#c04040' : '#7a7080' }}>
+                  <span style={{ color: wi === wave.current ? '#c04040' : '#7a7080' }}>
                     Волна {wi + 1}
                   </span>
                   <button
@@ -225,7 +215,7 @@ export default function AdminPanel() {
                     ✕
                   </button>
                 </div>
-                {wave.enemies.map((eg, ei) => (
+                {wdef.enemies.map((eg, ei) => (
                   <div key={ei} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 2, flexWrap: 'wrap' }}>
                     <span style={{ color: enemyColors[eg.type] ?? '#7a7080', width: 100, fontSize: '0.78rem' }}>
                       {eg.type.replace('_', ' ')}
@@ -339,4 +329,4 @@ export default function AdminPanel() {
       </div>
     </div>
   );
-}
+});

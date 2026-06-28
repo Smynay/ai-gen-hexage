@@ -1,5 +1,6 @@
+import { observer } from 'mobx-react-lite';
 import { GamePhase } from './types';
-import { useGameStore } from './store/gameStore';
+import { gameStore } from './store/gameStore';
 import MainMenu from './ui/MainMenu';
 import StageSelect from './ui/StageSelect';
 import GameCanvas from './ui/GameCanvas';
@@ -14,10 +15,8 @@ const appStyle: React.CSSProperties = {
   overflow: 'hidden', background: '#0a0a14',
 };
 
-export default function App() {
-  const phase = useGameStore(s => s.phase);
-  const adminMode = useGameStore(s => s.adminMode);
-  const openPanel = useGameStore(s => s.openPanel);
+export default observer(function App() {
+  const { phase, adminMode, openPanel } = gameStore;
 
   return (
     <div style={appStyle}>
@@ -36,4 +35,4 @@ export default function App() {
       {phase === GamePhase.Defeat && <GameOverScreen />}
     </div>
   );
-}
+});

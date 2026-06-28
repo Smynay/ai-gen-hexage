@@ -1,4 +1,5 @@
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 import { STAGES } from '../data/stages';
 
 const hudStyle: React.CSSProperties = {
@@ -26,11 +27,8 @@ const waveBlockStyle: React.CSSProperties = {
   alignItems: 'center', gap: 2,
 };
 
-export default function HUD() {
-  const resources = useGameStore(s => s.resources);
-  const wave = useGameStore(s => s.wave);
-  const currentStage = useGameStore(s => s.currentStage);
-  const enemies = useGameStore(s => s.enemies);
+export default observer(function HUD() {
+  const { resources, wave, currentStage, enemies } = gameStore;
 
   const stage = STAGES[currentStage];
   const stageName = stage?.name ?? '';
@@ -79,4 +77,4 @@ export default function HUD() {
       <div style={{ color: '#7a7080' }}>{stageName}</div>
     </div>
   );
-}
+});

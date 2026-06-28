@@ -1,6 +1,5 @@
-import { useGameStore } from '../store/gameStore';
-import { STAGES } from '../data/stages';
-import { GamePhase } from '../types';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 
 const containerStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -31,9 +30,8 @@ const btnStyle: React.CSSProperties = {
   margin: '6px',
 };
 
-export default function MainMenu() {
-  const goToStageSelect = useGameStore(s => s.goToStageSelect);
-  const startTestLevel = useGameStore(s => s.startTestLevel);
+export default observer(function MainMenu() {
+  const { goToStageSelect, startTestLevel } = gameStore;
 
   return (
     <div style={containerStyle}>
@@ -61,4 +59,4 @@ export default function MainMenu() {
       </div>
     </div>
   );
-}
+});

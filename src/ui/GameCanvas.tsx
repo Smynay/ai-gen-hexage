@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { observer } from 'mobx-react-lite';
+import { gameStore } from '../store/gameStore';
 import { renderHexGrid } from '../renderer/HexRenderer';
 import { GamePhase } from '../types';
 
@@ -8,7 +9,7 @@ const canvasParentStyle: React.CSSProperties = {
   cursor: 'grab', background: '#0a0a14',
 };
 
-export default function GameCanvas() {
+export default observer(function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef<{ active: boolean; sx: number; sy: number; origX: number; origY: number }>({
@@ -17,26 +18,20 @@ export default function GameCanvas() {
   const lastTickRef = useRef(0);
   const tickAccumRef = useRef(0);
 
-  const gameLoopTick = useGameStore(s => s.gameLoopTick);
-  const phase = useGameStore(s => s.phase);
-  const adminMode = useGameStore(s => s.adminMode);
-  const paintTerrain = useGameStore(s => s.paintTerrain);
-  const paintTile = useGameStore(s => s.paintTile);
-  const togglePanel = useGameStore(s => s.togglePanel);
+  const { gameLoopTick, phase, adminMode, paintTile, togglePanel } = gameStore;
 
   const getHexFromEvent = useCallback((clientX: number, clientY: number) => {
-    const state = useGameStore.getState();
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const px = clientX - rect.left;
     const py = clientY - rect.top;
-    const cx = state.cameraX;
-    const cy = state.cameraY;
-    const zoom = state.cameraZoom;
+    const cx = gameStore.cameraX;
+    const cy = gameStore.cameraY;
+    const zoom = gameStore.cameraZoom;
     const wx = (px - canvas.width / 2 + cx) / zoom;
     const wy = (py - canvas.height / 2 + cy) / zoom;
-    const tile = state.grid.pointToHex?.({ x: wx, y: wy });
+    const tile = gameStore.grid.pointToHex?.({ x: wx, y: wy });
     return tile ? { q: tile.q, r: tile.r } : null;
   }, []);
 
@@ -75,8 +70,7 @@ export default function GameCanvas() {
       if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          const state = useGameStore.getState();
-          renderHexGrid(ctx, state, canvas.width, canvas.height);
+          renderHexGrid(ctx, gameStore, canvas.width, canvas.height);
         }
       }
 
@@ -87,7 +81,6 @@ export default function GameCanvas() {
     return () => cancelAnimationFrame(animRef.current);
   }, [phase, gameLoopTick]);
 
-  // Keyboard: ~ toggles admin panel
   useEffect(() => {
     if (!adminMode) return;
     const handler = (e: KeyboardEvent) => {
@@ -101,10 +94,10 @@ export default function GameCanvas() {
   }, [adminMode, togglePanel]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 2 && adminMode && paintTerrain) {
+    if (e.button === 2 && adminMode && gameStore.paintTerrain) {
       const coord = getHexFromEvent(e.clientX, e.clientY);
       if (coord) {
-        paintTile(coord, paintTerrain);
+        paintTile(coord, gameStore.paintTerrain);
       }
       return;
     }
@@ -116,7 +109,7 @@ export default function GameCanvas() {
     if (drag.active) {
       const dx = e.clientX - drag.sx;
       const dy = e.clientY - drag.sy;
-      useGameStore.getState().panCamera(-dx, -dy);
+      gameStore.panCamera(-dx, -dy);
       drag.sx = e.clientX;
       drag.sy = e.clientY;
     }
@@ -132,9 +125,9 @@ export default function GameCanvas() {
     if (totalDx < 5 && totalDy < 5) {
       const coord = getHexFromEvent(e.clientX, e.clientY);
       if (coord) {
-        useGameStore.getState().selectHex(coord);
+        gameStore.selectHex(coord);
       } else {
-        useGameStore.getState().selectHex(null);
+        gameStore.selectHex(null);
       }
     }
   };
@@ -142,20 +135,20 @@ export default function GameCanvas() {
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const dz = e.deltaY > 0 ? -0.1 : 0.1;
-    useGameStore.getState().zoomCamera(dz);
+    gameStore.zoomCamera(dz);
   };
 
   return (
     <div style={{
       ...canvasParentStyle,
-      cursor: adminMode && paintTerrain ? 'crosshair' : 'grab',
+      cursor: adminMode && gameStore.paintTerrain ? 'crosshair' : 'grab',
     }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onWheel={handleWheel}
       onContextMenu={e => {
-        if (adminMode && paintTerrain) {
+        if (adminMode && gameStore.paintTerrain) {
           e.preventDefault();
         }
       }}
@@ -163,4 +156,4 @@ export default function GameCanvas() {
       <canvas ref={canvasRef} style={{ display: 'block' }} />
     </div>
   );
-}
+});
