@@ -1,9 +1,6 @@
-import { Direction } from 'honeycomb-grid';
-import type { Tile } from './Tile';
+import type { HexCoord, IHexGrid, IHexTile } from '../../types';
 
-export { Direction } from 'honeycomb-grid';
-
-export type HexCoord = { q: number; r: number };
+export type { HexCoord } from '../../types';
 
 export function hexEqual(a: HexCoord, b: HexCoord): boolean {
   return a.q === b.q && a.r === b.r;
@@ -17,13 +14,12 @@ export function hexKey(q: number, r: number): string {
   return `${q},${r}`;
 }
 
-const POINTY_DIRS: Direction[] = [
-  Direction.NE, Direction.E, Direction.SE,
-  Direction.SW, Direction.W, Direction.NW,
-];
+// Pointy-top hex directions matching honeycomb-grid Direction enum:
+// NE=1, E=2, SE=3, SW=5, W=6, NW=7
+const POINTY_DIRS = [1, 2, 3, 5, 6, 7] as const;
 
-export function hexNeighbors(grid: { neighborOf: (c: HexCoord, d: Direction) => Tile | undefined }, coord: HexCoord): Tile[] {
-  const result: Tile[] = [];
+export function hexNeighbors(grid: IHexGrid, coord: HexCoord): IHexTile[] {
+  const result: IHexTile[] = [];
   for (const dir of POINTY_DIRS) {
     const nb = grid.neighborOf(coord, dir);
     if (nb) result.push(nb);
@@ -49,7 +45,7 @@ export function hexesInRadius(center: HexCoord, radius: number): HexCoord[] {
 }
 
 export function findPath(
-  grid: { neighborOf: (c: HexCoord, d: Direction) => Tile | undefined; getHex: (c: HexCoord) => Tile | undefined },
+  grid: IHexGrid,
   from: HexCoord,
   to: HexCoord,
 ): HexCoord[] | null {

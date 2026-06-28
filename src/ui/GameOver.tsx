@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
+import { STAGES } from '../data/stages';
 
 const overlayStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -31,7 +32,7 @@ export default observer(function GameOverScreen() {
           : 'Все гексы потеряны. Цивилизация пала.'}
       </div>
       <div style={{ display: 'flex', gap: '12px' }}>
-        {victory && currentStage < 5 && (
+        {victory && currentStage < STAGES.length - 1 && (
           <button
             onClick={() => startStage(currentStage + 1)}
             style={{

@@ -1,5 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
+import { adminStore } from '../store/adminStore';
+import { progressStore } from '../store/progressStore';
 
 const containerStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -38,7 +40,9 @@ const secondaryBtnStyle: React.CSSProperties = {
 };
 
 export default observer(function MainMenu() {
-  const { goToStageSelect, startTestLevel, completedStages, resetProgress } = gameStore;
+  const { goToStageSelect } = gameStore;
+  const { startTestLevel } = adminStore;
+  const { completedStages, reset } = progressStore;
 
   const hasProgress = completedStages.length > 0;
 
@@ -58,7 +62,7 @@ export default observer(function MainMenu() {
 
       <button
         style={hasProgress ? secondaryBtnStyle : btnStyle}
-        onClick={() => { if (hasProgress) resetProgress(); goToStageSelect(); }}
+        onClick={() => { if (hasProgress) reset(); goToStageSelect(); }}
       >
         ▸ {hasProgress ? 'НАЧАТЬ НОВУЮ КАМПАНИЮ' : 'НАЧАТЬ КАМПАНИЮ'}
       </button>
