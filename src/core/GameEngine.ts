@@ -1,14 +1,8 @@
-import { Grid } from 'honeycomb-grid';
 import type { GameState, HexCoord, EnemyUnit, WaveDefinition, StageGoal, BuildingInfo, Resources } from '../types';
-import { GamePhase, BuildingType, EnemyType, ResourceType, Terrain } from '../types';
-import { hexNeighbors, hexDistance, hexEqual, hexesInRadius, findPath } from './hex/HexGrid';
-import { Tile } from './hex/Tile';
-import { createHexGridAdapter } from './hex/HexGridAdapter';
-import { BUILDINGS } from '../data/buildings';
-import { ENEMIES } from '../data/enemies';
-import { TECHS } from '../data/techs';
-import { STAGES } from '../data/stages';
-import { CONFIG, TICK_TIME } from '../config';
+import { GamePhase, BuildingType, EnemyType, ResourceType } from '../types';
+import { hexNeighbors, hexDistance, hexEqual, findPath } from './hex/HexGrid';
+import type { GameContext } from './interfaces';
+import { gameContext } from '../boot/dependencies';
 
 let nextEnemyId = 1;
 
@@ -20,137 +14,20 @@ export function allocEnemyId(): number {
   return nextEnemyId++;
 }
 
-type GameConfig = {
-  stageIndex: number;
-  mapRadius: number;
-  playerStart: HexCoord;
-  terrains: Terrain[];
-  initialResources: Resources;
-  waves: WaveDefinition[];
-  waveTimer: number;
-  unlockedTechs: string[];
-  adminMode: boolean;
-};
-
-function createGameState(config: GameConfig): GameState {
-  const { stageIndex, mapRadius, playerStart, terrains, initialResources, waves, waveTimer, unlockedTechs, adminMode } = config;
-
-  const coords = hexesInRadius({ q: 0, r: 0 }, mapRadius);
-  const rawGrid = new Grid(Tile, coords) as unknown as Grid<Tile>;
-
-  const slotsMin = CONFIG.buildingSlots.min;
-  const slotsMax = CONFIG.buildingSlots.max;
-
-  rawGrid.forEach((tile) => {
-    const isPlayerStart = tile.q === playerStart.q && tile.r === playerStart.r;
-    const terrainIndex = Math.abs(tile.q * 7 + tile.r * 13) % terrains.length;
-    tile.terrain = terrains[terrainIndex];
-    tile.claimed = isPlayerStart;
-    tile.claimedByPlayer = isPlayerStart;
-    tile.revealed = isPlayerStart;
-    tile.buildingSlots = isPlayerStart
-      ? CONFIG.buildingSlots.mainHex
-      : slotsMin + Math.floor(Math.abs(tile.q * 17 + tile.r * 31) % (slotsMax - slotsMin + 1));
-    tile.buildings = isPlayerStart
-      ? [{ type: BuildingType.Settlement, level: 1, hp: CONFIG.settlementHp, maxHp: CONFIG.settlementHp, progress: 1 }]
-      : [];
-    tile.defenders = [];
-    tile.enemyUnits = [];
-    tile.hp = CONFIG.defaultTileHp;
-    tile.maxHp = CONFIG.defaultTileHp;
-  });
-
-  const grid = createHexGridAdapter(rawGrid);
-
-  // Reveal start hex neighbours — shared across all levels
-  const startTile = grid.getHex(playerStart);
-  if (startTile) {
-    for (const nb of hexNeighbors(grid, startTile)) {
-      nb.revealed = true;
-    }
-  }
-
-  return {
-    phase: GamePhase.Playing,
-    currentStage: stageIndex,
-    grid,
-    resources: initialResources,
-    wave: {
-      current: 0,
-      total: waves.length,
-      timer: waveTimer,
-      active: false,
-      spawning: false,
-      spawnTimer: 0,
-      spawnQueue: [],
-    },
-    techs: unlockedTechs.map(id => ({
-      id,
-      researched: false,
-      inProgress: false,
-      progress: 0,
-    })),
-    enemies: new Map(),
-    cameraX: 0,
-    cameraY: 0,
-    cameraZoom: 1,
-    selectedHex: playerStart,
-    tick: 0,
-    stageResult: null,
-    adminMode,
-    adminWaves: adminMode ? waves : null,
-  };
+export function getClaimCost(ctx: GameContext = gameContext) {
+  return { ...ctx.config.claimCost };
 }
 
-export function createInitialState(stageIndex: number): GameState {
-  const stage = STAGES[stageIndex];
-  return createGameState({
-    stageIndex,
-    mapRadius: stage.mapRadius,
-    playerStart: stage.playerStart,
-    terrains: stage.terrain,
-    initialResources: {
-      septims: stage.initialResources.septims ?? 0,
-      wood: stage.initialResources.wood ?? 0,
-      stone: stage.initialResources.stone ?? 0,
-      food: stage.initialResources.food ?? 0,
-      iron: stage.initialResources.iron ?? 0,
-    },
-    waves: stage.waves,
-    waveTimer: CONFIG.waveBaseTimer + stageIndex * CONFIG.waveTimerPerStage,
-    unlockedTechs: stage.unlockedTechs,
-    adminMode: false,
-  });
+export function canClaim(state: GameState, ctx: GameContext = gameContext): boolean {
+  return state.resources.septims >= ctx.config.claimCost.septims &&
+    state.resources.wood >= ctx.config.claimCost.wood &&
+    state.resources.food >= ctx.config.claimCost.food;
 }
 
-export function createSandboxState(): GameState {
-  return createGameState({
-    stageIndex: -1,
-    mapRadius: 5,
-    playerStart: { q: 0, r: 0 },
-    terrains: [Terrain.Plains, Terrain.Forest, Terrain.Mountain, Terrain.Water, Terrain.Snow, Terrain.Tundra],
-    initialResources: { septims: 100, wood: 100, stone: 100, food: 100, iron: 100 },
-    waves: [],
-    waveTimer: 5,
-    unlockedTechs: Object.keys(TECHS),
-    adminMode: true,
-  });
-}
-
-export function getClaimCost() {
-  return { ...CONFIG.claimCost };
-}
-
-export function canClaim(state: GameState): boolean {
-  return state.resources.septims >= CONFIG.claimCost.septims &&
-    state.resources.wood >= CONFIG.claimCost.wood &&
-    state.resources.food >= CONFIG.claimCost.food;
-}
-
-export function canBuild(state: GameState, coord: HexCoord, buildingType: BuildingType): boolean {
+export function canBuild(state: GameState, coord: HexCoord, buildingType: BuildingType, ctx: GameContext = gameContext): boolean {
   const tile = state.grid.getHex(coord);
   if (!tile || !tile.claimed || !tile.claimedByPlayer || tile.buildings.length >= tile.buildingSlots) return false;
-  const def = BUILDINGS[buildingType];
+  const def = ctx.data.buildings[buildingType];
   if (!def.allowedTerrain.includes(tile.terrain)) return false;
   if (buildingType === BuildingType.Settlement && tile.buildings.some((b: BuildingInfo) => b.type === BuildingType.Settlement)) return false;
   const r = state.resources;
@@ -163,9 +40,9 @@ export function canBuild(state: GameState, coord: HexCoord, buildingType: Buildi
   );
 }
 
-export function startBuilding(state: GameState, coord: HexCoord, buildingType: BuildingType): boolean {
-  if (!canBuild(state, coord, buildingType)) return false;
-  const def = BUILDINGS[buildingType];
+export function startBuilding(state: GameState, coord: HexCoord, buildingType: BuildingType, ctx: GameContext = gameContext): boolean {
+  if (!canBuild(state, coord, buildingType, ctx)) return false;
+  const def = ctx.data.buildings[buildingType];
   const r = state.resources;
   r.septims -= def.cost.septims;
   r.wood -= def.cost.wood;
@@ -183,13 +60,13 @@ export function startBuilding(state: GameState, coord: HexCoord, buildingType: B
   return true;
 }
 
-export function claimHex(state: GameState, coord: HexCoord): boolean {
+export function claimHex(state: GameState, coord: HexCoord, ctx: GameContext = gameContext): boolean {
   const tile = state.grid.getHex(coord);
   if (!tile || tile.claimed || tile.terrain === 'water') return false;
-  if (!canClaim(state)) return false;
-  state.resources.septims -= CONFIG.claimCost.septims;
-  state.resources.wood -= CONFIG.claimCost.wood;
-  state.resources.food -= CONFIG.claimCost.food;
+  if (!canClaim(state, ctx)) return false;
+  state.resources.septims -= ctx.config.claimCost.septims;
+  state.resources.wood -= ctx.config.claimCost.wood;
+  state.resources.food -= ctx.config.claimCost.food;
   tile.claimed = true;
   tile.claimedByPlayer = true;
   tile.revealed = true;
@@ -199,10 +76,10 @@ export function claimHex(state: GameState, coord: HexCoord): boolean {
   return true;
 }
 
-export function getReclaimCost(buildings: BuildingType[]): Resources {
-  const cost = { ...getClaimCost(), stone: 0, iron: 0 };
+export function getReclaimCost(buildings: BuildingType[], ctx: GameContext = gameContext): Resources {
+  const cost = { ...getClaimCost(ctx), stone: 0, iron: 0 };
   for (const bt of buildings) {
-    const rc = BUILDINGS[bt]?.reclaimCost ?? { septims: 0, wood: 0, stone: 0, food: 0, iron: 0 };
+    const rc = ctx.data.buildings[bt]?.reclaimCost ?? { septims: 0, wood: 0, stone: 0, food: 0, iron: 0 };
     cost.septims += rc.septims;
     cost.wood += rc.wood;
     cost.stone += rc.stone;
@@ -212,10 +89,10 @@ export function getReclaimCost(buildings: BuildingType[]): Resources {
   return cost;
 }
 
-export function canReclaim(state: GameState, coord: HexCoord, selected: BuildingType[]): boolean {
+export function canReclaim(state: GameState, coord: HexCoord, selected: BuildingType[], ctx: GameContext = gameContext): boolean {
   const tile = state.grid.getHex(coord);
   if (!tile || !tile.claimed || tile.claimedByPlayer || tile.terrain === 'water') return false;
-  const cost = getReclaimCost(selected);
+  const cost = getReclaimCost(selected, ctx);
   const r = state.resources;
   return (
     r.septims >= cost.septims &&
@@ -226,10 +103,10 @@ export function canReclaim(state: GameState, coord: HexCoord, selected: Building
   );
 }
 
-export function reclaimHex(state: GameState, coord: HexCoord, selected: BuildingType[]): boolean {
-  if (!canReclaim(state, coord, selected)) return false;
+export function reclaimHex(state: GameState, coord: HexCoord, selected: BuildingType[], ctx: GameContext = gameContext): boolean {
+  if (!canReclaim(state, coord, selected, ctx)) return false;
   const tile = state.grid.getHex(coord)!;
-  const cost = getReclaimCost(selected);
+  const cost = getReclaimCost(selected, ctx);
   state.resources.septims -= cost.septims;
   state.resources.wood -= cost.wood;
   state.resources.stone -= cost.stone;
@@ -238,7 +115,7 @@ export function reclaimHex(state: GameState, coord: HexCoord, selected: Building
   tile.claimedByPlayer = true;
   tile.destroyedBuildings = [];
   for (const bt of selected) {
-    const def = BUILDINGS[bt];
+    const def = ctx.data.buildings[bt];
     tile.buildings.push({
       type: bt,
       level: 1,
@@ -250,10 +127,10 @@ export function reclaimHex(state: GameState, coord: HexCoord, selected: Building
   return true;
 }
 
-export function canResearch(state: GameState, techId: string): boolean {
+export function canResearch(state: GameState, techId: string, ctx: GameContext = gameContext): boolean {
   const ts = state.techs.find(t => t.id === techId);
   if (!ts || ts.researched || ts.inProgress) return false;
-  const tech = TECHS[techId];
+  const tech = ctx.data.techs[techId];
   if (!tech) return false;
   for (const preq of tech.prerequisites) {
     const p = state.techs.find(t => t.id === preq);
@@ -269,10 +146,10 @@ export function canResearch(state: GameState, techId: string): boolean {
   );
 }
 
-export function startResearch(state: GameState, techId: string): boolean {
-  if (!canResearch(state, techId)) return false;
+export function startResearch(state: GameState, techId: string, ctx: GameContext = gameContext): boolean {
+  if (!canResearch(state, techId, ctx)) return false;
   const ts = state.techs.find(t => t.id === techId)!;
-  const tech = TECHS[techId];
+  const tech = ctx.data.techs[techId];
   const r = state.resources;
   r.septims -= tech.cost.septims;
   r.wood -= tech.cost.wood;
@@ -321,23 +198,21 @@ function findClosestPlayerHex(state: GameState, from: HexCoord): HexCoord | null
   return best;
 }
 
-function getStage(stageIndex: number) {
-  return STAGES[stageIndex];
-}
-
-export function gameTick(state: GameState): void {
+export function gameTick(state: GameState, ctx: GameContext = gameContext): void {
   if (state.phase !== GamePhase.Playing) return;
   state.tick++;
 
-  const stage = getStage(state.currentStage);
-  const waves = state.adminWaves ?? stage.waves;
+  const { config: cfg, data } = ctx;
+  const TICK_TIME = cfg.tickIntervalMs / 1000;
+  const stage = data.stages[state.currentStage];
+  const waves = state.adminWaves ?? stage?.waves;
 
   // 1. Resource generation
   state.grid.forEach((tile) => {
     if (!tile.claimedByPlayer) return;
     for (const b of tile.buildings) {
       if (b.progress < 1) continue;
-      const def = BUILDINGS[b.type as BuildingType];
+      const def = data.buildings[b.type as BuildingType];
       for (const [rType, amount] of Object.entries(def.producesPerTick)) {
         state.resources[rType as ResourceType] += (amount as number) * TICK_TIME;
       }
@@ -348,7 +223,7 @@ export function gameTick(state: GameState): void {
   state.grid.forEach((tile) => {
     for (const b of tile.buildings) {
       if (b.progress >= 1) continue;
-      b.progress += TICK_TIME / BUILDINGS[b.type as BuildingType].buildTime;
+      b.progress += TICK_TIME / data.buildings[b.type as BuildingType].buildTime;
       if (b.progress > 1) b.progress = 1;
     }
   });
@@ -357,7 +232,7 @@ export function gameTick(state: GameState): void {
   for (const ts of state.techs) {
     if (!ts.inProgress) continue;
     ts.progress += TICK_TIME;
-    const tech = TECHS[ts.id];
+    const tech = data.techs[ts.id];
     if (tech && ts.progress >= tech.researchTime) {
       ts.researched = true;
       ts.inProgress = false;
@@ -371,7 +246,7 @@ export function gameTick(state: GameState): void {
     if (state.wave.timer <= 0) {
       state.wave.active = true;
       const waveDef = waves[state.wave.current];
-      spawnEnemyWave(state, waveDef);
+      spawnEnemyWave(state, waveDef, ctx);
     }
   }
 
@@ -382,7 +257,7 @@ export function gameTick(state: GameState): void {
       const next = state.wave.spawnQueue.shift()!;
       const tile = state.grid.getHex(next.hex);
       if (tile && !tile.claimedByPlayer) {
-        const def = ENEMIES[next.type];
+        const def = data.enemies[next.type];
         const enemy: EnemyUnit = {
           id: allocEnemyId(),
           type: next.type,
@@ -450,7 +325,7 @@ export function gameTick(state: GameState): void {
     let defenseDmg = 0;
     for (const b of tile.buildings) {
       if (b.progress < 1) continue;
-      const def = BUILDINGS[b.type as BuildingType];
+      const def = data.buildings[b.type as BuildingType];
       defenseDmg += def.passiveDamage * TICK_TIME;
       if (def.providesDefense) {
         defenseDmg += def.defenseDamage * TICK_TIME;
@@ -474,7 +349,7 @@ export function gameTick(state: GameState): void {
   const deadEnemies: number[] = [];
   for (const [eid, enemy] of state.enemies) {
     if (enemy.hp <= 0) {
-      const edef = ENEMIES[enemy.type];
+      const edef = data.enemies[enemy.type];
       state.resources.septims += edef.reward.septims;
       deadEnemies.push(eid);
       const tile = state.grid.getHex(enemy.pos);
@@ -490,7 +365,7 @@ export function gameTick(state: GameState): void {
   // 9. Tile HP regen
   state.grid.forEach((tile) => {
     if (tile.claimedByPlayer && tile.hp < tile.maxHp && tile.enemyUnits.length === 0) {
-      tile.hp = Math.min(tile.maxHp, tile.hp + CONFIG.tileRegenPerTick);
+      tile.hp = Math.min(tile.maxHp, tile.hp + cfg.tileRegenPerTick);
     }
   });
 
@@ -503,7 +378,7 @@ export function gameTick(state: GameState): void {
       state.wave.timer = 5;
     } else if (state.wave.current < state.wave.total) {
       state.wave.timer = Math.max(
-        CONFIG.waveBaseTimer + Math.max(0, state.currentStage) * CONFIG.waveTimerPerStage,
+        cfg.waveBaseTimer + Math.max(0, state.currentStage) * cfg.waveTimerPerStage,
         10
       );
     }
@@ -511,11 +386,11 @@ export function gameTick(state: GameState): void {
 
   // 11. Check goals
   if (!state.adminMode) {
-    checkGoals(state, stage.goals);
+    checkGoals(state, stage?.goals ?? []);
   }
 }
 
-function spawnEnemyWave(state: GameState, waveDef: WaveDefinition): void {
+function spawnEnemyWave(state: GameState, waveDef: WaveDefinition, ctx: GameContext = gameContext): void {
   const spawnHexes = getSpawnHexes(state);
   if (spawnHexes.length === 0) return;
   const queue: { type: EnemyType; hex: HexCoord; interval: number }[] = [];
@@ -526,7 +401,7 @@ function spawnEnemyWave(state: GameState, waveDef: WaveDefinition): void {
     }
   }
   state.wave.spawning = true;
-  state.wave.spawnTimer = CONFIG.spawnInitialTimer;
+  state.wave.spawnTimer = ctx.config.spawnInitialTimer;
   state.wave.spawnQueue = queue;
 }
 
@@ -561,5 +436,3 @@ function checkGoals(state: GameState, goals: StageGoal[]): void {
     state.stageResult = 'defeat';
   }
 }
-
-export { getStage };

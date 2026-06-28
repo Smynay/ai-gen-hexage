@@ -2,7 +2,6 @@ import { makeAutoObservable, observable } from 'mobx';
 import type { GameState, HexCoord, Resources, EnemyType, EnemyUnit, Terrain, WaveDefinition, IHexGrid } from '../types';
 import { GamePhase, BuildingType } from '../types';
 import {
-  createInitialState,
   gameTick,
   claimHex,
   reclaimHex,
@@ -11,9 +10,9 @@ import {
   canResearch,
   startResearch,
   resetEnemyId,
-  createSandboxState,
   allocEnemyId,
 } from '../core/GameEngine';
+import { createInitialState, createSandboxState } from '../boot/createGame';
 import { hexNeighbors, hexEqual } from '../core/hex/HexGrid';
 import { ENEMIES } from '../data/enemies';
 import { CONFIG } from '../config';
