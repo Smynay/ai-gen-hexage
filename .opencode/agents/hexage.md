@@ -23,6 +23,10 @@ permission:
 - `main` — production, всегда деплоится на GitHub Pages (корень)
 - `dev` — интеграционная, деплоится на GitHub Pages `/dev/`
 
+**GitHub Pages:**
+- Prod: `https://Smynay.github.io/ai-gen-hexage/`
+- Dev: `https://Smynay.github.io/ai-gen-hexage/dev/`
+
 ## Состав команды
 
 | Агент | Триггер | Что делает |
@@ -127,5 +131,3 @@ Task(subagent_type="hexage-tsdev", prompt="Main PR #N одобрен и смер
 Репозиторий должен быть **приватным** по умолчанию. Создавать публичный репозиторий только по явному запросу пользователя.
 
 ---
-
-$ARGUMENTS

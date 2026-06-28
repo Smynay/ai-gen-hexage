@@ -19,10 +19,10 @@ permission:
 
 | Ресурс | Prod | Dev |
 |---|---|---|
-| GitHub Pages URL | `https://<org>.github.io/hexage/` | `https://<org>.github.io/hexage/dev/` |
+| GitHub Pages URL | `https://Smynay.github.io/ai-gen-hexage/` | `https://Smynay.github.io/ai-gen-hexage/dev/` |
 | Ветка деплоя | `main` | `dev` |
 | GitHub Pages ветка | `gh-pages` (корень) | `gh-pages` (подпапка `dev/`) |
-| Vite base path | `/` | `/dev/` |
+| Vite base path | `/ai-gen-hexage/` | `/ai-gen-hexage/dev/` |
 
 ## Файлы, с которыми ты работаешь
 
@@ -171,13 +171,10 @@ gh issue close <epic-number> --repo Smynay/ai-gen-hexage
 
 Деплой происходит автоматически через GitHub Actions (`.github/workflows/deploy.yml`):
 
-- **Push в `dev`** → сборка с `--base /dev/` → деплой в `gh-pages/dev/`
-- **Push в `main`** → сборка с `--base /` → деплой в `gh-pages/` (корень)
+- **Push в `dev`** → сборка с `--base /ai-gen-hexage/dev/` → деплой в `gh-pages/dev/`
+- **Push в `main`** → сборка с `--base /ai-gen-hexage/` → деплой в `gh-pages/` (корень)
 
-Для ручного просмотра статуса деплоя:
-```bash
-gh run list --workflow=deploy.yml --repo Smynay/ai-gen-hexage
-```
+Base path определяется динамически в workflow по имени ветки, а не в `vite.config.ts`.
 
 ## Когда сомневаешься
 
