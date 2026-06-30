@@ -20,7 +20,7 @@ permission:
 - **Локальный путь**: текущая рабочая директория
 
 **Ветки:**
-- `main` — production, всегда деплоится на GitHub Pages (корень)
+- `master` — production, всегда деплоится на GitHub Pages (корень)
 - `dev` — интеграционная, деплоится на GitHub Pages `/dev/`
 
 **GitHub Pages:**
@@ -31,7 +31,7 @@ permission:
 
 | Агент | Триггер | Что делает |
 |---|---|---|
-| `hexage-product` | Новая фича, продуктовое требование | Пишет PRD, создаёт epic и подзадачи в GitHub Issues/Project |
+| `hexage-product` | Новая фича, продуктовое требование | Пишет PRD, создаёт epic и подзадачи в GitHub Issues |
 | `hexage-architect` | Дизайн архитектуры, ревью кода | Проектирует структуру ДО реализации + ревьюит ПОСЛЕ |
 | `hexage-tsdev` | Подзадача `[tsdev]`, написание кода | Пишет TypeScript/React/Canvas код, открывает PR |
 | `hexage-devops` | Подзадача `[devops]`, CI/CD, деплой | Рулит GitHub Actions, GitHub Pages, секретами |
@@ -61,26 +61,14 @@ permission:
 ### Этап 5 — Dev validation
 После мёржа в `dev` — CI/CD автоматически деплоит на `/dev/`. Проверить в браузере.
 
-### Этап 6 — PR в main
-Открыть PR из feature-ветки **в `main`**. В теле PR указать `Closes #<issue-number>`. Назначить `Smynay` ревьюером. **Остановиться и ждать одобрения.**
+### Этап 6 — PR в master
+Открыть PR из feature-ветки **в `master`**. В теле PR указать `Closes #<issue-number>`. Назначить `Smynay` ревьюером. **Остановиться и ждать одобрения.**
 
 ### Этап 7 — Production validation
-После мёржа в `main` CI/CD деплоит на корень GitHub Pages. Проверить.
+После мёржа в `master` CI/CD деплоит на корень GitHub Pages. Проверить.
 
 ### Этап 8 — Done
 Закрыть родительский epic после закрытия всех подзадач.
-
-## GitHub Project
-
-- Project number: `1`
-- Project ID: `PVT_kwHOEb2FdM4Bb5FD`
-- Status field ID: `PVTSSF_lAHOEb2FdM4Bb5FDzhWmEXc`
-- Status option IDs:
-  - `633f0c2c` = Backlog
-  - `368d4b64` = In Progress
-  - `d4fab9cb` = Blocked
-  - `8f5b01c3` = PR Review
-  - `dcaace22` = Done
 
 ## Правила маршрутизации
 
@@ -114,16 +102,16 @@ Task(subagent_type="hexage-devops", prompt="<описание задачи>")
 
 Когда пользователь сообщает, что PR одобрен:
 
-**Dev PR одобрен → продолжить с валидацией dev + открыть main PR:**
+**Dev PR одобрен → продолжить с валидацией dev + открыть master PR:**
 
 ```
-Task(subagent_type="hexage-tsdev", prompt="Dev PR #N для [фича] одобрен и смержен в dev. Продолжи: валидируй на dev, затем открой PR из feat/<name> в main с 'Closes #<issue-number>'. Назначь Smynay ревьюером.")
+Task(subagent_type="hexage-tsdev", prompt="Dev PR #N для [фича] одобрен и смержен в dev. Продолжи: валидируй на dev, затем открой PR из feat/<name> в master с 'Closes #<issue-number>'. Назначь Smynay ревьюером.")
 ```
 
-**Main PR одобрен → валидировать prod + закрыть epic:**
+**Master PR одобрен → валидировать prod + закрыть epic:**
 
 ```
-Task(subagent_type="hexage-tsdev", prompt="Main PR #N одобрен и смержен в main. Валидируй на prod. Затем проверь, все ли подзадачи родительского epic закрыты — если да, закрой epic.")
+Task(subagent_type="hexage-tsdev", prompt="Master PR #N одобрен и смержен в master. Валидируй на prod. Затем проверь, все ли подзадачи родительского epic закрыты — если да, закрой epic.")
 ```
 
 ## Видимость репозитория

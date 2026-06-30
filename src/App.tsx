@@ -16,7 +16,7 @@ const appStyle: React.CSSProperties = {
   overflow: 'hidden', background: '#0a0a14',
 };
 
-export default observer(function App() {
+const App = observer(function App() {
   const { phase, openPanel } = gameStore;
   const { adminMode } = adminStore;
 
@@ -38,3 +38,4 @@ export default observer(function App() {
     </div>
   );
 });
+export default App;

@@ -18,7 +18,7 @@ export function createHexGridAdapter(grid: Grid<Tile>): IHexGrid {
       return grid.neighborOf(coord, direction as Direction) as IHexTile | undefined;
     },
     pointToHex(point: { x: number; y: number }): IHexTile | undefined {
-      return (grid as any).pointToHex(point) as IHexTile | undefined;
+      return (grid as unknown as { pointToHex(p: { x: number; y: number }): unknown }).pointToHex(point) as IHexTile | undefined;
     },
   };
 }

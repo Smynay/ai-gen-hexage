@@ -1,32 +1,60 @@
-# React + TypeScript + Vite
+# hexage
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Браузерная стратегия/выживание в реальном времени на гексогональной карте в сеттинге Свитков (Skyrim).
 
-Currently, two official plugins are available:
+## Стек
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Vite 8 + React 19 + TypeScript 6 + MobX 6**. Рендеринг на Canvas 2D (без внешних графических библиотек). Линтинг: `oxlint`.
 
-## React Compiler
+## Запуск
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # Dev-сервер (http://localhost:5173)
+npm run build    # TypeScript check + production сборка
+npm run preview  # Превью production сборки
+npm run lint     # Линтинг (oxlint)
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Архитектура
+
+Проект следует строгому разделению на слои:
+
+| Слой | Описание |
+|---|---|
+| `core/` | Чистая игровая логика — не зависит от React/DOM. GameEngine, системы, геометрия гексов |
+| `store/` | MobX-хранилища состояния |
+| `renderer/` | Canvas-рендеринг, разбитый на независимые слои |
+| `ui/` | React-компоненты интерфейса |
+| `data/` | Статические данные: этапы, здания, враги, технологии |
+| `boot/` | Инициализация и DI-контекст |
+
+### Игровой цикл (1 тик = 100ms)
+1. Добыча ресурсов
+2. Прогресс строительства/исследований
+3. Таймер волн и спавн врагов
+4. Движение врагов (BFS pathfinding)
+5. Бой (защитные здания + рукопашная)
+6. Очистка и награды
+7. Проверка победы/поражения
+
+### Кампания
+6 этапов с нарастающей сложностью. Карты радиусом 3-5 гексов, наборы волн, цели (выжить, захватить, убить босса).
+
+## GitHub Pages
+
+- **Production**: https://Smynay.github.io/ai-gen-hexage/
+- **Dev**: https://Smynay.github.io/ai-gen-hexage/dev/
+
+Авто-деплой через GitHub Actions при пуше в `master` и `dev`.
+
+## Разработка
+
+Разработка ведётся AI-агентами через OpenCode subagents:
+- `hexage` — координатор
+- `hexage-product` — продуктовые требования и планирование
+- `hexage-architect` — архитектура и ревью
+- `hexage-tsdev` — написание кода
+- `hexage-devops` — CI/CD и деплой
+
+Flow: `feature` → PR в `dev` → деплой на `/dev/` → PR в `master` → деплой на корень.

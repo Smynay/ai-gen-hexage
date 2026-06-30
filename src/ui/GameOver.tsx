@@ -11,7 +11,7 @@ const overlayStyle: React.CSSProperties = {
   zIndex: 200,
 };
 
-export default observer(function GameOverScreen() {
+const GameOverScreen = observer(function GameOverScreen() {
   const { stageResult, goToMenu, goToStageSelect, currentStage, startStage } = gameStore;
 
   const victory = stageResult === 'victory';
@@ -82,3 +82,4 @@ export default observer(function GameOverScreen() {
     </div>
   );
 });
+export default GameOverScreen;
