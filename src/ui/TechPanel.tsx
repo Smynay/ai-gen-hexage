@@ -26,7 +26,7 @@ const techBtnStyle = (active: boolean): React.CSSProperties => ({
   fontFamily: 'monospace', textAlign: 'left' as const,
 });
 
-export default observer(function TechPanel() {
+const TechPanel = observer(function TechPanel() {
   const { techs, research, canResearchTech } = gameStore;
 
   if (!techs || techs.length === 0) return null;
@@ -63,3 +63,4 @@ export default observer(function TechPanel() {
     </div>
   );
 });
+export default TechPanel;

@@ -27,7 +27,7 @@ const waveBlockStyle: React.CSSProperties = {
   alignItems: 'center', gap: 2,
 };
 
-export default observer(function HUD() {
+const HUD = observer(function HUD() {
   const { resources, wave, currentStage, enemies } = gameStore;
 
   const stage = STAGES[currentStage];
@@ -78,3 +78,4 @@ export default observer(function HUD() {
     </div>
   );
 });
+export default HUD;

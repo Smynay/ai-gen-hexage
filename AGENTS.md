@@ -111,7 +111,7 @@ src/
 - **Организация**: `Smynay`
 - **Репозиторий**: `ai-gen-hexage`
 - **Ветки**:
-  - `main` — production, авто-деплой на GitHub Pages (корень)
+  - `master` — production, авто-деплой на GitHub Pages (корень)
   - `dev` — интеграционная, авто-деплой на GitHub Pages (`/dev/`)
 - **GitHub Pages**:
   - Prod: `https://Smynay.github.io/ai-gen-hexage/`
@@ -130,13 +130,13 @@ src/
 | `hexage-tsdev` | `.opencode/agents/hexage-tsdev.md` | TypeScript-разработчик: код игры |
 | `hexage-devops` | `.opencode/agents/hexage-devops.md` | DevOps: GitHub Actions, Pages, CI/CD |
 
-## Development flow (feature → dev → main)
+## Development flow (feature → dev → master)
 
 1. **Product** создаёт epic и подзадачи с тегами `[architecture]`, `[tsdev]`, `[devops]`
 2. **Architect** проектирует структуру для `[architecture]` подзадачи → design doc
 3. **TS Dev** реализует `[tsdev]` подзадачу по дизайну архитектора
 4. PR в `dev` → ревью → мёрж → деплой на `/dev/`
-5. PR в `main` → ревью → мёрж → деплой на корень
+5. PR в `master` → ревью → мёрж → деплой на корень
 6. Закрытие epic после всех подзадач
 
 ## Архитектурные правила (для architect)

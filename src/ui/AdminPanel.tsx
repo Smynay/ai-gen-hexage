@@ -53,7 +53,7 @@ const enemyColors: Record<string, string> = {
   dragon_priest: '#c040c0', dragon: '#c04040',
 };
 
-export default observer(function AdminPanel() {
+const AdminPanel = observer(function AdminPanel() {
   const [tab, setTab] = useState<'resources' | 'terrain' | 'waves' | 'spawn'>('resources');
 
   const {
@@ -333,3 +333,4 @@ export default observer(function AdminPanel() {
     </div>
   );
 });
+export default AdminPanel;

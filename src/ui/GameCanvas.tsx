@@ -10,7 +10,7 @@ const canvasParentStyle: React.CSSProperties = {
   cursor: 'grab', background: '#0a0a14',
 };
 
-export default observer(function GameCanvas() {
+const GameCanvas = observer(function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef<{ active: boolean; sx: number; sy: number; origX: number; origY: number }>({
@@ -159,3 +159,4 @@ export default observer(function GameCanvas() {
     </div>
   );
 });
+export default GameCanvas;
