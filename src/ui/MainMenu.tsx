@@ -39,7 +39,7 @@ const secondaryBtnStyle: React.CSSProperties = {
   fontFamily: 'monospace', margin: '6px',
 };
 
-export default observer(function MainMenu() {
+const MainMenu = observer(function MainMenu() {
   const { goToStageSelect } = gameStore;
   const { startTestLevel } = adminStore;
   const { completedStages, reset } = progressStore;
@@ -76,3 +76,4 @@ export default observer(function MainMenu() {
     </div>
   );
 });
+export default MainMenu;

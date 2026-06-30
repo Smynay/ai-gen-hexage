@@ -40,7 +40,7 @@ const backBtnStyle: React.CSSProperties = {
   fontFamily: 'monospace', fontSize: '1rem',
 };
 
-export default observer(function StageSelect() {
+const StageSelect = observer(function StageSelect() {
   const { startStage, goToMenu } = gameStore;
   const { completedStages } = progressStore;
 
@@ -93,3 +93,4 @@ export default observer(function StageSelect() {
     </div>
   );
 });
+export default StageSelect;

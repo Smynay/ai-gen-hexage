@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
 import { adminStore } from '../store/adminStore';
 import { BuildingType } from '../types';
+import type { BuildingInfo, Resources } from '../types';
 import { BUILDINGS } from '../data/buildings';
 import { STAGES } from '../data/stages';
 import { CONFIG } from '../config';
@@ -58,7 +59,7 @@ function progressFill(pct: number): React.CSSProperties {
   };
 }
 
-function canAfford(resources: any, def: any): boolean {
+function canAfford(resources: Resources, def: { cost: Resources }): boolean {
   return (
     resources.septims >= def.cost.septims &&
     resources.wood >= def.cost.wood &&
@@ -68,7 +69,7 @@ function canAfford(resources: any, def: any): boolean {
   );
 }
 
-export default observer(function HexPanel() {
+const HexPanel = observer(function HexPanel() {
   const {
     selectedHex, claimSelected, buildOnSelected, reclaimSelected,
     currentStage, grid, resources, openPanel, togglePanel,
@@ -106,7 +107,7 @@ export default observer(function HexPanel() {
 
         {tile.claimedByPlayer && buildingCount > 0 && (
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {(tile.buildings ?? []).map((b: any, i: number) => {
+            {(tile.buildings ?? []).map((b: BuildingInfo, i: number) => {
               const def = BUILDINGS[b.type as BuildingType];
               return (
                 <div key={i} style={{ fontSize: '0.85rem' }}>
@@ -211,3 +212,4 @@ export default observer(function HexPanel() {
     </div>
   );
 });
+export default HexPanel;
