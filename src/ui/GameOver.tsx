@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
 import { STAGES } from '../data/stages';
+import ObjectivesPanel from './ObjectivesPanel';
 
 const overlayStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -12,7 +13,7 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const GameOverScreen = observer(function GameOverScreen() {
-  const { stageResult, goToMenu, goToStageSelect, currentStage, startStage } = gameStore;
+  const { stageResult, goToMenu, goToStageSelect, currentStage, startStage, goals } = gameStore;
 
   const victory = stageResult === 'victory';
 
@@ -26,11 +27,16 @@ const GameOverScreen = observer(function GameOverScreen() {
       }}>
         {victory ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}
       </div>
-      <div style={{ color: '#7a7080', fontSize: '1rem', marginBottom: '2rem' }}>
+      <div style={{ color: '#7a7080', fontSize: '1rem', marginBottom: '1.5rem' }}>
         {victory
           ? 'Этап пройден! Цивилизация выжила.'
           : 'Все гексы потеряны. Цивилизация пала.'}
       </div>
+      {goals.length > 0 && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <ObjectivesPanel mode="game_over" goals={goals} />
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '12px' }}>
         {victory && currentStage < STAGES.length - 1 && (
           <button

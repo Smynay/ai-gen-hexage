@@ -1,5 +1,5 @@
 import { Grid } from 'honeycomb-grid';
-import type { GameState, HexCoord, WaveDefinition } from '../types';
+import type { GameState, HexCoord, WaveDefinition, StageGoal } from '../types';
 import { GamePhase, BuildingType, Terrain } from '../types';
 import { hexNeighbors, hexesInRadius } from '../core/hex/HexGrid';
 import { Tile } from '../core/hex/Tile';
@@ -17,10 +17,11 @@ type CreateConfig = {
   waveTimer: number;
   unlockedTechs: string[];
   adminMode: boolean;
+  goals: StageGoal[];
 };
 
 function createGameState(config: CreateConfig, ctx: GameContext = gameContext): GameState {
-  const { stageIndex, mapRadius, playerStart, terrains, initialResources, waves, waveTimer, unlockedTechs, adminMode } = config;
+  const { stageIndex, mapRadius, playerStart, terrains, initialResources, waves, waveTimer, unlockedTechs, adminMode, goals } = config;
   const { config: cfg } = ctx;
 
   const coords = hexesInRadius({ q: 0, r: 0 }, mapRadius);
@@ -78,6 +79,7 @@ function createGameState(config: CreateConfig, ctx: GameContext = gameContext): 
       progress: 0,
     })),
     enemies: new Map(),
+    goals: goals.map(g => ({ ...g, count: 0 })),
     cameraX: 0,
     cameraY: 0,
     cameraZoom: 1,
@@ -107,6 +109,7 @@ export function createInitialState(stageIndex: number, ctx: GameContext = gameCo
     waveTimer: ctx.config.waveBaseTimer + stageIndex * ctx.config.waveTimerPerStage,
     unlockedTechs: stage.unlockedTechs,
     adminMode: false,
+    goals: stage.goals,
   }, ctx);
 }
 
@@ -121,5 +124,6 @@ export function createSandboxState(ctx: GameContext = gameContext): GameState {
     waveTimer: 5,
     unlockedTechs: Object.keys(ctx.data.techs),
     adminMode: true,
+    goals: [],
   }, ctx);
 }

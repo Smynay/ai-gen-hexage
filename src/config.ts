@@ -76,6 +76,25 @@ export const CONFIG = {
     snow: 0.05,
     tundra: 0.10,
   },
+
+  objectives: {
+    labels: {
+      survive_waves: 'Выжить волны',
+      claim_hexes: 'Захватить гексы',
+      defeat_boss: 'Убить босса',
+    } as const,
+    icons: {
+      survive_waves: '⚔️',
+      claim_hexes: '🏠',
+      defeat_boss: '🐉',
+    } as const,
+    colors: {
+      completed: '#40c040',
+      incomplete: '#7a7080',
+      failed: '#c04040',
+      locked: '#5a4050',
+    },
+  },
 };
 
 export const TICK_TIME = CONFIG.tickIntervalMs / 1000;

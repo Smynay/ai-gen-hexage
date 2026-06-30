@@ -10,6 +10,7 @@ import { tickWaves } from './systems/WaveSystem';
 import { tickMovement } from './systems/MovementSystem';
 import { tickCombat } from './systems/CombatSystem';
 import { tickCleanup } from './systems/CleanupSystem';
+import { tickObjectives } from './systems/ObjectiveSystem';
 import { tickGoals } from './systems/GoalSystem';
 import { invalidatePlayerHexes } from './world/WorldQuery';
 
@@ -183,5 +184,6 @@ export function gameTick(state: GameState, ctx: GameContext = gameContext): void
   tickMovement(state, ctx);
   tickCombat(state, ctx);
   tickCleanup(state, ctx);
+  tickObjectives(state, ctx);
   tickGoals(state, ctx);
 }

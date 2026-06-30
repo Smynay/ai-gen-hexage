@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
 import { STAGES } from '../data/stages';
+import ObjectivesPanel from './ObjectivesPanel';
 
 const hudStyle: React.CSSProperties = {
   position: 'absolute', top: 0, left: 0, right: 0,
@@ -28,7 +29,7 @@ const waveBlockStyle: React.CSSProperties = {
 };
 
 const HUD = observer(function HUD() {
-  const { resources, wave, currentStage, enemies } = gameStore;
+  const { resources, wave, currentStage, enemies, goals } = gameStore;
 
   const stage = STAGES[currentStage];
   const stageName = stage?.name ?? '';
@@ -74,7 +75,12 @@ const HUD = observer(function HUD() {
         </div>
       </div>
 
-      <div style={{ color: '#7a7080' }}>{stageName}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+        <div style={{ color: '#7a7080' }}>{stageName}</div>
+        {goals.length > 0 && (
+          <ObjectivesPanel mode="hud" goals={goals} />
+        )}
+      </div>
     </div>
   );
 });
