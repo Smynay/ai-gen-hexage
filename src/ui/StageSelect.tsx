@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite';
 import { gameStore } from '../store/gameStore';
 import { progressStore } from '../store/progressStore';
 import { STAGES } from '../data/stages';
+import ObjectivesPanel from './ObjectivesPanel';
 
 const containerStyle: React.CSSProperties = {
   position: 'absolute', inset: 0,
@@ -82,6 +83,9 @@ const StageSelect = observer(function StageSelect() {
               <div style={{ fontSize: '0.9rem', color: '#5a5060' }}>
                 {stage.waves.length} волн · {stage.waves.reduce((s, w) =>
                   s + w.enemies.reduce((a, e) => a + e.count, 0), 0)} врагов
+              </div>
+              <div style={{ marginTop: 10, borderTop: '1px solid #1e1a2e', paddingTop: 8 }}>
+                <ObjectivesPanel mode="stage_select" goals={stage.goals} locked={!unlocked} />
               </div>
             </div>
           );

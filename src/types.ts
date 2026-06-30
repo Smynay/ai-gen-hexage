@@ -195,6 +195,7 @@ export type GameState = {
   wave: WaveState;
   techs: TechState[];
   enemies: Map<number, EnemyUnit>;
+  goals: StageGoal[];
   cameraX: number;
   cameraY: number;
   cameraZoom: number;

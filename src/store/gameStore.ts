@@ -1,5 +1,5 @@
 import { makeAutoObservable, observable } from 'mobx';
-import type { GameState, HexCoord, EnemyType, Resources, EnemyUnit, WaveDefinition, IHexGrid } from '../types';
+import type { GameState, HexCoord, EnemyType, Resources, EnemyUnit, WaveDefinition, IHexGrid, StageGoal } from '../types';
 import { GamePhase, BuildingType } from '../types';
 import {
   gameTick,
@@ -23,6 +23,7 @@ class GameStore implements GameState {
   wave = { current: 0, total: 0, timer: 30, active: false, spawning: false, spawnTimer: 0, spawnQueue: [] as { type: EnemyType; hex: HexCoord; interval: number }[] };
   techs: { id: string; researched: boolean; inProgress: boolean; progress: number }[] = [];
   enemies = new Map<number, EnemyUnit>();
+  goals: StageGoal[] = [];
   cameraX = 0;
   cameraY = 0;
   cameraZoom = 1;
